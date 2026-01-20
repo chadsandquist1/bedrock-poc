@@ -32,6 +32,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, List, Dict
 
 try:
     import boto3
@@ -62,7 +63,7 @@ class LLMJudgeEvaluator:
             print("or run 'terraform output' in the project directory.")
             sys.exit(1)
 
-    def _get_terraform_output(self, output_name: str) -> str | None:
+    def _get_terraform_output(self, output_name: str) -> Optional[str]:
         """Get value from Terraform output."""
         try:
             import subprocess
@@ -127,12 +128,16 @@ class LLMJudgeEvaluator:
                     raise ValueError(f"Invalid JSON on line {line_num}: {e}")
         print(f"Dataset validation passed ({line_num} lines)")
 
+    # Valid task types for Bedrock evaluation
+    VALID_TASK_TYPES = ["Summarization", "Classification", "QuestionAndAnswer", "Generation", "Custom"]
+
     def create_evaluation_job(
         self,
         dataset_s3_uri: str,
         job_name: str = None,
         model_id: str = "amazon.titan-text-lite-v1",
-        metrics: list[str] = None
+        metrics: List[str] = None,
+        task_type: str = "QuestionAndAnswer"
     ) -> str:
         """
         Create a Bedrock evaluation job.
@@ -142,6 +147,7 @@ class LLMJudgeEvaluator:
             job_name: Name for the evaluation job
             model_id: Model to evaluate
             metrics: List of metrics to evaluate
+            task_type: Type of task (Summarization, Classification, QuestionAndAnswer, Generation, Custom)
 
         Returns:
             Job ARN
@@ -153,9 +159,14 @@ class LLMJudgeEvaluator:
         if metrics is None:
             metrics = ["Builtin.Accuracy", "Builtin.Robustness"]
 
+        if task_type not in self.VALID_TASK_TYPES:
+            print(f"Warning: '{task_type}' may not be a valid task type.")
+            print(f"Valid task types: {', '.join(self.VALID_TASK_TYPES)}")
+
         output_s3_uri = f"s3://{self.bucket_name}/results/{job_name}/"
 
         print(f"Creating evaluation job: {job_name}")
+        print(f"  Task Type: {task_type}")
         print(f"  Model: {model_id}")
         print(f"  Dataset: {dataset_s3_uri}")
         print(f"  Metrics: {metrics}")
@@ -169,7 +180,7 @@ class LLMJudgeEvaluator:
                     "automated": {
                         "datasetMetricConfigs": [
                             {
-                                "taskType": "General",
+                                "taskType": task_type,
                                 "dataset": {
                                     "name": job_name,
                                     "datasetLocation": {
@@ -282,7 +293,7 @@ class LLMJudgeEvaluator:
 
             time.sleep(poll_interval)
 
-    def download_results(self, job_status: dict, output_dir: str = None) -> str | None:
+    def download_results(self, job_status: dict, output_dir: str = None) -> Optional[str]:
         """
         Download evaluation results from S3.
 
@@ -348,7 +359,8 @@ class LLMJudgeEvaluator:
         dataset_path: str = None,
         job_name: str = None,
         model_id: str = "amazon.titan-text-lite-v1",
-        metrics: list[str] = None,
+        metrics: List[str] = None,
+        task_type: str = "QuestionAndAnswer",
         timeout: int = 1800,
         output_dir: str = None
     ) -> dict:
@@ -360,6 +372,7 @@ class LLMJudgeEvaluator:
             job_name: Name for the evaluation job
             model_id: Model to evaluate
             metrics: List of metrics
+            task_type: Type of task (Summarization, Classification, QuestionAndAnswer, Generation, Custom)
             timeout: Monitoring timeout in seconds
             output_dir: Directory to download results to
 
@@ -382,7 +395,8 @@ class LLMJudgeEvaluator:
                 dataset_s3_uri=dataset_s3_uri,
                 job_name=job_name,
                 model_id=model_id,
-                metrics=metrics
+                metrics=metrics,
+                task_type=task_type
             )
 
             # Set environment variable for future reference
@@ -440,6 +454,12 @@ Examples:
         help="Metrics to evaluate (default: Builtin.Accuracy Builtin.Robustness)"
     )
     parser.add_argument(
+        "--task-type",
+        choices=["Summarization", "Classification", "QuestionAndAnswer", "Generation", "Custom"],
+        default="QuestionAndAnswer",
+        help="Task type for evaluation (default: QuestionAndAnswer)"
+    )
+    parser.add_argument(
         "--timeout", "-t",
         type=int,
         default=1800,
@@ -475,6 +495,7 @@ Examples:
         job_name=args.job_name,
         model_id=args.model,
         metrics=args.metrics,
+        task_type=args.task_type,
         timeout=args.timeout,
         output_dir=args.output_dir
     )

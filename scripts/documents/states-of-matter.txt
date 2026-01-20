@@ -1,0 +1,28 @@
+States of Matter: A Physics Overview
+
+Matter is anything that has mass and takes up space. All matter exists in different states depending on temperature and pressure conditions.
+
+The Three Basic States of Matter:
+
+1. SOLID
+- Particles are tightly packed in a fixed arrangement
+- Has a definite shape and volume
+- Particles vibrate in place but don't move freely
+- Examples: ice, rock, wood, metal
+
+2. LIQUID
+- Particles are close together but can move around each other
+- Has a definite volume but takes the shape of its container
+- Flows and can be poured
+- Examples: water, milk, oil, juice
+
+3. GAS
+- Particles are spread far apart and move freely
+- Has no definite shape or volume
+- Expands to fill its container
+- Examples: air, oxygen, helium, water vapor
+
+The three states of matter are solid, liquid, and gas. Matter can change from one state to another through processes like melting, freezing, evaporation, and condensation.
+
+Additional States:
+Scientists have also identified other states of matter including plasma (found in stars and lightning) and Bose-Einstein condensate (achieved at extremely low temperatures).
