@@ -177,7 +177,46 @@ Create a JSONL file with your evaluation data. Each line should be a valid JSON 
 {"prompt": "What are the benefits of exercise?", "referenceResponse": "Exercise improves cardiovascular health, mental well-being, and helps maintain a healthy weight.", "category": "health"}
 ```
 
-### Upload Your Dataset
+### Using the Python Evaluation Script (Recommended)
+
+A Python script is provided that automates the entire evaluation workflow:
+
+```bash
+cd scripts
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run evaluation with the sample dataset
+python llm_judge_evaluation.py --dataset sample-evaluation-dataset.jsonl
+
+# Or with your own dataset
+python llm_judge_evaluation.py --dataset /path/to/your-eval.jsonl --job-name my-evaluation
+```
+
+**Script Features:**
+- Uploads dataset to S3 automatically
+- Creates and monitors evaluation job
+- Downloads results when complete
+- Supports resuming with `EVALUATION_JOB_ARN` environment variable
+
+**Environment Variables:**
+| Variable | Description |
+|----------|-------------|
+| `EVALUATION_JOB_ARN` | ARN of existing job to monitor (skips creation) |
+| `LLM_JUDGE_BUCKET` | S3 bucket name (auto-detected from Terraform) |
+| `EVALUATION_ROLE_ARN` | IAM role ARN (auto-detected from Terraform) |
+| `AWS_REGION` | AWS region (default: us-east-1) |
+
+**Example: Monitor an existing job:**
+```bash
+export EVALUATION_JOB_ARN='arn:aws:bedrock:us-east-1:123456789:evaluation-job/abc123'
+python llm_judge_evaluation.py
+```
+
+---
+
+### Manual Method: Upload Your Dataset
 
 ```bash
 # Get the LLM Judge bucket name
@@ -187,7 +226,7 @@ LLM_JUDGE_BUCKET=$(terraform output -raw llm_judge_bucket_name)
 aws s3 cp evaluation-dataset.jsonl s3://$LLM_JUDGE_BUCKET/datasets/
 ```
 
-### Create an Evaluation Job
+### Manual Method: Create an Evaluation Job
 
 ```bash
 # Get the evaluation role ARN
