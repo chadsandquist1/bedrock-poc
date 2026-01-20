@@ -9,6 +9,7 @@ A simplified RAG (Retrieval-Augmented Generation) pipeline using AWS Bedrock Kno
 - **Embeddings**: Amazon Titan Embeddings V2 (cheapest option, 1024 dimensions)
 - **Chunking**: Semantic chunking for intelligent document segmentation
 - **Knowledge Base**: AWS Bedrock Knowledge Base (created via AWS CLI null_resource)
+- **LLM as a Judge**: S3 bucket for evaluation datasets (JSONL) with CORS enabled
 
 ## Prerequisites
 
@@ -147,3 +148,124 @@ The `|| true` in the null_resource commands prevents errors if resources already
 terraform destroy
 terraform apply
 ```
+
+## Next Steps: LLM as a Judge Evaluations
+
+After deploying your RAG pipeline, you can evaluate your model's responses using **LLM as a Judge**. This feature uses a foundation model to automatically assess the quality of responses.
+
+### What is LLM as a Judge?
+
+LLM as a Judge is an automated evaluation method where a large language model evaluates the outputs of another model based on criteria like:
+- **Accuracy**: How factually correct are the responses?
+- **Relevance**: How well do responses address the prompt?
+- **Coherence**: How logically structured are the responses?
+- **Helpfulness**: How useful are the responses to the user?
+
+### Resources Created
+
+The `llmasjudge.tf` file creates:
+- **S3 Bucket**: `bedrock-rag-dev-llm-judge-<account-id>` with CORS enabled for JSONL datasets
+- **IAM Role**: For Bedrock evaluation jobs with S3 and model invocation permissions
+
+### Preparing Your Evaluation Dataset
+
+Create a JSONL file with your evaluation data. Each line should be a valid JSON object:
+
+```jsonl
+{"prompt": "What is the capital of France?", "referenceResponse": "Paris is the capital of France.", "category": "geography"}
+{"prompt": "Explain photosynthesis briefly", "referenceResponse": "Photosynthesis is the process by which plants convert sunlight, water, and CO2 into glucose and oxygen.", "category": "science"}
+{"prompt": "What are the benefits of exercise?", "referenceResponse": "Exercise improves cardiovascular health, mental well-being, and helps maintain a healthy weight.", "category": "health"}
+```
+
+### Upload Your Dataset
+
+```bash
+# Get the LLM Judge bucket name
+LLM_JUDGE_BUCKET=$(terraform output -raw llm_judge_bucket_name)
+
+# Upload your evaluation dataset
+aws s3 cp evaluation-dataset.jsonl s3://$LLM_JUDGE_BUCKET/datasets/
+```
+
+### Create an Evaluation Job
+
+```bash
+# Get the evaluation role ARN
+EVAL_ROLE_ARN=$(terraform output -raw llm_judge_evaluation_role_arn)
+LLM_JUDGE_BUCKET=$(terraform output -raw llm_judge_bucket_name)
+
+# Create the evaluation job
+aws bedrock create-evaluation-job \
+  --job-name "rag-evaluation-$(date +%Y%m%d-%H%M%S)" \
+  --role-arn "$EVAL_ROLE_ARN" \
+  --evaluation-config '{
+    "automated": {
+      "datasetMetricConfigs": [{
+        "taskType": "General",
+        "dataset": {
+          "name": "rag-eval-dataset",
+          "datasetLocation": {
+            "s3Uri": "s3://'"$LLM_JUDGE_BUCKET"'/datasets/evaluation-dataset.jsonl"
+          }
+        },
+        "metricNames": ["Builtin.Accuracy", "Builtin.Robustness"]
+      }]
+    }
+  }' \
+  --inference-config '{
+    "models": [{
+      "bedrockModel": {
+        "modelIdentifier": "amazon.titan-text-lite-v1",
+        "inferenceParams": "{\"maxTokenCount\": 512, \"temperature\": 0}"
+      }
+    }]
+  }' \
+  --output-data-config '{
+    "s3Uri": "s3://'"$LLM_JUDGE_BUCKET"'/results/"
+  }' \
+  --region us-east-1
+```
+
+### Monitor Your Evaluation Job
+
+```bash
+# List all evaluation jobs
+aws bedrock list-evaluation-jobs --region us-east-1
+
+# Get details of a specific job
+aws bedrock get-evaluation-job --job-identifier <job-arn> --region us-east-1
+```
+
+### Retrieve Results
+
+Once the job completes, results are stored in the S3 bucket:
+
+```bash
+# Download results
+aws s3 sync s3://$LLM_JUDGE_BUCKET/results/ ./evaluation-results/
+```
+
+### Evaluation Metrics
+
+Available built-in metrics include:
+| Metric | Description |
+|--------|-------------|
+| `Builtin.Accuracy` | Measures factual correctness |
+| `Builtin.Robustness` | Measures consistency across similar prompts |
+| `Builtin.Toxicity` | Detects harmful or inappropriate content |
+
+### Integration with RAG Pipeline
+
+To evaluate your RAG pipeline's responses:
+
+1. Query your Knowledge Base and collect responses
+2. Format responses into JSONL with prompts and reference answers
+3. Upload to the LLM Judge bucket
+4. Run an evaluation job
+5. Analyze results to identify areas for improvement
+
+### Cost Considerations
+
+- Evaluation jobs incur costs for model invocations (judge model)
+- S3 storage costs for datasets and results
+- Use `amazon.titan-text-lite-v1` as the judge model for cost-effective evaluations
