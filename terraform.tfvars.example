@@ -1,0 +1,16 @@
+# Copy this file to terraform.tfvars and customize as needed
+
+aws_region   = "us-east-1"
+environment  = "dev"
+project_name = "bedrock-rag"
+
+# Vector store configuration
+vector_bucket_name  = "rag-vector-store"
+vector_index_name   = "kb-index"
+embedding_dimension = 1024
+distance_metric     = "cosine"
+
+# Semantic chunking configuration
+max_tokens                      = 300
+buffer_size                     = 1
+breakpoint_percentile_threshold = 95
