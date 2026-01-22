@@ -11,15 +11,60 @@ A simplified RAG (Retrieval-Augmented Generation) pipeline using AWS Bedrock Kno
 - **Knowledge Base**: AWS Bedrock Knowledge Base (created via AWS CLI null_resource)
 - **LLM as a Judge**: S3 bucket for evaluation datasets (JSONL) with CORS enabled
 
+## Project Structure
+
+```
+bedrock-poc/
+├── main.tf                 # Main Terraform configuration (S3, IAM, Knowledge Base)
+├── llmasjudge.tf           # LLM as a Judge evaluation resources
+├── variables.tf            # Input variables
+├── outputs.tf              # Output values
+├── providers.tf            # Provider configuration
+├── terraform.tfvars.example # Example variables file
+├── README.md
+└── scripts/
+    ├── llm_judge_evaluation.py      # Python evaluation script
+    ├── requirements.txt             # Python dependencies
+    ├── sample-evaluation-dataset.jsonl  # Sample JSONL dataset
+    └── documents/                   # Sample documents for RAG
+        ├── france-geography.txt
+        ├── rag-ai-explanation.txt
+        ├── photosynthesis-biology.txt
+        ├── states-of-matter.txt
+        └── shakespeare-literature.txt
+```
+
 ## Prerequisites
 
-- AWS CLI v2 with S3 Vectors support
+- AWS CLI v2.30+ (with S3 Vectors support)
 - Terraform >= 1.0
+- Python 3.8+ with pip
 - `jq` installed for JSON parsing
 - AWS credentials configured with appropriate permissions
 - Access to Amazon Bedrock (request access in AWS Console)
 
-## Usage
+## Quick Start
+
+```bash
+# 1. Deploy infrastructure
+terraform init
+terraform apply
+
+# 2. Upload sample documents to RAG
+aws s3 sync scripts/documents/ s3://$(terraform output -raw documents_bucket_name)/
+
+# 3. Start ingestion
+KB_ID=$(aws bedrock-agent list-knowledge-bases --region us-east-1 | jq -r '.knowledgeBaseSummaries[] | select(.name=="bedrock-rag-dev-knowledge-base") | .knowledgeBaseId')
+DS_ID=$(aws bedrock-agent list-data-sources --knowledge-base-id $KB_ID --region us-east-1 | jq -r '.dataSourceSummaries[0].dataSourceId')
+aws bedrock-agent start-ingestion-job --knowledge-base-id $KB_ID --data-source-id $DS_ID --region us-east-1
+
+# 4. Run LLM evaluation (after ingestion completes)
+cd scripts
+pip install -r requirements.txt
+python llm_judge_evaluation.py --dataset sample-evaluation-dataset.jsonl
+```
+
+## Detailed Usage
 
 ### 1. Initialize Terraform
 
@@ -58,6 +103,10 @@ echo $DS_ID
 ### 6. Upload documents to the S3 bucket
 
 ```bash
+# Upload sample documents
+aws s3 sync scripts/documents/ s3://$(terraform output -raw documents_bucket_name)/
+
+# Or upload your own documents
 aws s3 cp your-document.pdf s3://$(terraform output -raw documents_bucket_name)/
 ```
 
@@ -103,6 +152,7 @@ aws s3vectors create-vector-bucket --vector-bucket-name "your-vector-bucket-name
 aws s3vectors create-index \
   --vector-bucket-name my-vector-bucket \
   --index-name kb-index \
+  --data-type float32 \
   --dimension 1024 \
   --distance-metric cosine
 ```
@@ -149,7 +199,9 @@ terraform destroy
 terraform apply
 ```
 
-## Next Steps: LLM as a Judge Evaluations
+---
+
+## LLM as a Judge Evaluations
 
 After deploying your RAG pipeline, you can evaluate your model's responses using **LLM as a Judge**. This feature uses a foundation model to automatically assess the quality of responses.
 
@@ -177,30 +229,54 @@ Create a JSONL file with your evaluation data. Each line should be a valid JSON 
 {"prompt": "What are the benefits of exercise?", "referenceResponse": "Exercise improves cardiovascular health, mental well-being, and helps maintain a healthy weight.", "category": "health"}
 ```
 
-### Using the Python Evaluation Script (Recommended)
+---
 
-A Python script is provided that automates the entire evaluation workflow:
+## Python Evaluation Script
+
+A Python script (`scripts/llm_judge_evaluation.py`) automates the entire evaluation workflow.
+
+### Installation
 
 ```bash
 cd scripts
-
-# Install dependencies
 pip install -r requirements.txt
+```
 
+### Basic Usage
+
+```bash
 # Run evaluation with the sample dataset
 python llm_judge_evaluation.py --dataset sample-evaluation-dataset.jsonl
 
-# Or with your own dataset
-python llm_judge_evaluation.py --dataset /path/to/your-eval.jsonl --job-name my-evaluation
+# Run with your own dataset
+python llm_judge_evaluation.py --dataset /path/to/your-eval.jsonl
 ```
 
-**Script Features:**
-- Uploads dataset to S3 automatically
-- Creates and monitors evaluation job
-- Downloads results when complete
-- Supports resuming with `EVALUATION_JOB_ARN` environment variable
+### Command-Line Options
 
-**Environment Variables:**
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--dataset` | `-d` | - | Path to local JSONL evaluation dataset |
+| `--job-name` | `-n` | auto-generated | Name for the evaluation job |
+| `--model` | `-m` | amazon.nova-2-sonic-v1:0 | Model ID to evaluate |
+| `--task-type` | - | QuestionAndAnswer | Task type (see below) |
+| `--metrics` | - | Builtin.Accuracy Builtin.Robustness | Metrics to evaluate |
+| `--timeout` | `-t` | 1800 | Timeout in seconds for monitoring |
+| `--output-dir` | `-o` | ./evaluation-results/<job-name> | Directory for results |
+| `--region` | - | us-east-1 | AWS region |
+
+### Valid Task Types
+
+| Task Type | Use Case |
+|-----------|----------|
+| `QuestionAndAnswer` | RAG, Q&A systems (default) |
+| `Summarization` | Text summarization tasks |
+| `Classification` | Text classification tasks |
+| `Generation` | General text generation |
+| `Custom` | Custom evaluation criteria |
+
+### Environment Variables
+
 | Variable | Description |
 |----------|-------------|
 | `EVALUATION_JOB_ARN` | ARN of existing job to monitor (skips creation) |
@@ -208,39 +284,66 @@ python llm_judge_evaluation.py --dataset /path/to/your-eval.jsonl --job-name my-
 | `EVALUATION_ROLE_ARN` | IAM role ARN (auto-detected from Terraform) |
 | `AWS_REGION` | AWS region (default: us-east-1) |
 
-**Example: Monitor an existing job:**
+### Examples
+
 ```bash
+# Basic evaluation with sample data
+python llm_judge_evaluation.py --dataset sample-evaluation-dataset.jsonl
+
+# Custom job name and task type
+python llm_judge_evaluation.py \
+  --dataset eval.jsonl \
+  --job-name my-rag-evaluation \
+  --task-type QuestionAndAnswer
+
+# Use a different model
+python llm_judge_evaluation.py \
+  --dataset eval.jsonl \
+  --model amazon.nova-2-sonic-v1:0
+
+# Monitor an existing job
 export EVALUATION_JOB_ARN='arn:aws:bedrock:us-east-1:123456789:evaluation-job/abc123'
 python llm_judge_evaluation.py
+
+# Specify custom output directory
+python llm_judge_evaluation.py \
+  --dataset eval.jsonl \
+  --output-dir ./my-results
 ```
+
+### Script Workflow
+
+1. **Upload**: Validates and uploads JSONL dataset to S3
+2. **Create**: Creates a Bedrock evaluation job
+3. **Monitor**: Polls job status until completion (with timeout)
+4. **Download**: Downloads results to local directory
 
 ---
 
-### Manual Method: Upload Your Dataset
+## Manual Evaluation Method
+
+If you prefer not to use the Python script:
+
+### Upload Your Dataset
 
 ```bash
-# Get the LLM Judge bucket name
 LLM_JUDGE_BUCKET=$(terraform output -raw llm_judge_bucket_name)
-
-# Upload your evaluation dataset
 aws s3 cp evaluation-dataset.jsonl s3://$LLM_JUDGE_BUCKET/datasets/
 ```
 
-### Manual Method: Create an Evaluation Job
+### Create an Evaluation Job
 
 ```bash
-# Get the evaluation role ARN
 EVAL_ROLE_ARN=$(terraform output -raw llm_judge_evaluation_role_arn)
 LLM_JUDGE_BUCKET=$(terraform output -raw llm_judge_bucket_name)
 
-# Create the evaluation job
 aws bedrock create-evaluation-job \
   --job-name "rag-evaluation-$(date +%Y%m%d-%H%M%S)" \
   --role-arn "$EVAL_ROLE_ARN" \
   --evaluation-config '{
     "automated": {
       "datasetMetricConfigs": [{
-        "taskType": "General",
+        "taskType": "QuestionAndAnswer",
         "dataset": {
           "name": "rag-eval-dataset",
           "datasetLocation": {
@@ -254,8 +357,8 @@ aws bedrock create-evaluation-job \
   --inference-config '{
     "models": [{
       "bedrockModel": {
-        "modelIdentifier": "amazon.titan-text-lite-v1",
-        "inferenceParams": "{\"maxTokenCount\": 512, \"temperature\": 0}"
+        "modelIdentifier": "amazon.nova-2-sonic-v1:0",
+        "inferenceParams": "{\"maxTokens\": 512, \"temperature\": 0.7, \"topP\": 0.9}"
       }
     }]
   }' \
@@ -277,34 +380,38 @@ aws bedrock get-evaluation-job --job-identifier <job-arn> --region us-east-1
 
 ### Retrieve Results
 
-Once the job completes, results are stored in the S3 bucket:
-
 ```bash
-# Download results
 aws s3 sync s3://$LLM_JUDGE_BUCKET/results/ ./evaluation-results/
 ```
 
-### Evaluation Metrics
+---
 
-Available built-in metrics include:
+## Evaluation Metrics
+
+Available built-in metrics:
+
 | Metric | Description |
 |--------|-------------|
 | `Builtin.Accuracy` | Measures factual correctness |
 | `Builtin.Robustness` | Measures consistency across similar prompts |
 | `Builtin.Toxicity` | Detects harmful or inappropriate content |
 
-### Integration with RAG Pipeline
-
-To evaluate your RAG pipeline's responses:
-
-1. Query your Knowledge Base and collect responses
-2. Format responses into JSONL with prompts and reference answers
-3. Upload to the LLM Judge bucket
-4. Run an evaluation job
-5. Analyze results to identify areas for improvement
-
-### Cost Considerations
+## Cost Considerations
 
 - Evaluation jobs incur costs for model invocations (judge model)
 - S3 storage costs for datasets and results
-- Use `amazon.titan-text-lite-v1` as the judge model for cost-effective evaluations
+- Use `amazon.nova-2-sonic-v1:0` as the judge model for cost-effective evaluations
+
+## Security Notes
+
+The `.gitignore` is configured to exclude:
+- Terraform state files (`*.tfstate`, `*.tfstate.*`)
+- AWS credentials and keys (`*.pem`, `*.key`, `credentials`)
+- Environment files (`.env`, `*.tfvars`)
+- Evaluation results (may contain sensitive data)
+- Python cache files
+
+**Never commit:**
+- AWS access keys or secrets
+- Terraform state files
+- `.env` files with credentials

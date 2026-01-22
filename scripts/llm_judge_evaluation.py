@@ -34,6 +34,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
+
+
+
 try:
     import boto3
     from botocore.exceptions import ClientError
@@ -52,7 +55,6 @@ class LLMJudgeEvaluator:
         self.region = region or os.environ.get("AWS_REGION", "us-east-1")
         self.bedrock_client = boto3.client("bedrock", region_name=self.region)
         self.s3_client = boto3.client("s3", region_name=self.region)
-
         # Get configuration from environment or Terraform outputs
         self.bucket_name = os.environ.get("LLM_JUDGE_BUCKET") or self._get_terraform_output("llm_judge_bucket_name")
         self.role_arn = os.environ.get("EVALUATION_ROLE_ARN") or self._get_terraform_output("llm_judge_evaluation_role_arn")
@@ -131,11 +133,21 @@ class LLMJudgeEvaluator:
     # Valid task types for Bedrock evaluation
     VALID_TASK_TYPES = ["Summarization", "Classification", "QuestionAndAnswer", "Generation", "Custom"]
 
+    def _get_inference_params(self, model_id: str) -> str:
+        """Get the correct inference parameters based on model family.
+
+        Note: For Bedrock evaluation jobs, returning an empty string lets
+        the service use its defaults. json.dumps({}) produces '{}' which
+        is invalid - the API expects either no inferenceParams or an empty string.
+        """
+        # For evaluation jobs, empty string lets service use defaults
+        return ""
+
     def create_evaluation_job(
         self,
         dataset_s3_uri: str,
         job_name: str = None,
-        model_id: str = "amazon.titan-text-lite-v1",
+        model_id: str = None,
         metrics: List[str] = None,
         task_type: str = "QuestionAndAnswer"
     ) -> str:
@@ -173,6 +185,12 @@ class LLMJudgeEvaluator:
         print(f"  Output: {output_s3_uri}")
 
         try:
+            # Build the model config - only include inferenceParams if non-empty
+            inference_params = self._get_inference_params(model_id)
+            bedrock_model_config = {"modelIdentifier": model_id}
+            if inference_params:
+                bedrock_model_config["inferenceParams"] = inference_params
+
             response = self.bedrock_client.create_evaluation_job(
                 jobName=job_name,
                 roleArn=self.role_arn,
@@ -195,13 +213,7 @@ class LLMJudgeEvaluator:
                 inferenceConfig={
                     "models": [
                         {
-                            "bedrockModel": {
-                                "modelIdentifier": model_id,
-                                "inferenceParams": json.dumps({
-                                    "maxTokenCount": 512,
-                                    "temperature": 0
-                                })
-                            }
+                            "bedrockModel": bedrock_model_config
                         }
                     ]
                 },
@@ -358,7 +370,7 @@ class LLMJudgeEvaluator:
         self,
         dataset_path: str = None,
         job_name: str = None,
-        model_id: str = "amazon.titan-text-lite-v1",
+        model_id: str = None,
         metrics: List[str] = None,
         task_type: str = "QuestionAndAnswer",
         timeout: int = 1800,
@@ -415,6 +427,7 @@ class LLMJudgeEvaluator:
             "results_path": results_path
         }
 
+DEFAULT_MODEL_ID = ""
 
 def main():
     parser = argparse.ArgumentParser(
@@ -430,7 +443,7 @@ Examples:
   python llm_judge_evaluation.py
 
   # Create job with custom settings
-  python llm_judge_evaluation.py --dataset eval.jsonl --job-name my-eval --model amazon.titan-text-express-v1
+  python llm_judge_evaluation.py --dataset eval.jsonl --job-name my-eval --model us.amazon.nova-lite-v1:0
         """
     )
 
@@ -444,8 +457,8 @@ Examples:
     )
     parser.add_argument(
         "--model", "-m",
-        default="amazon.titan-text-lite-v1",
-        help="Model ID to evaluate (default: amazon.titan-text-lite-v1)"
+        default=DEFAULT_MODEL_ID,
+        help="Model ID to evaluate"
     )
     parser.add_argument(
         "--metrics",

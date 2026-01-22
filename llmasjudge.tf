@@ -184,8 +184,8 @@ output "llm_judge_create_evaluation_command" {
       --inference-config '{
         "models": [{
           "bedrockModel": {
-            "modelIdentifier": "amazon.titan-text-lite-v1",
-            "inferenceParams": "{\"maxTokenCount\": 512, \"temperature\": 0}"
+            "modelIdentifier": "amazon.nova-2-sonic-v1:0",
+            "inferenceParams": "{\"maxTokens\": 512, \"temperature\": 0.7, \"topP\": 0.9}"
           }
         }]
       }' \
