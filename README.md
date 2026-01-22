@@ -229,6 +229,28 @@ Create a JSONL file with your evaluation data. Each line should be a valid JSON 
 {"prompt": "What are the benefits of exercise?", "referenceResponse": "Exercise improves cardiovascular health, mental well-being, and helps maintain a healthy weight.", "category": "health"}
 ```
 
+### JSONL Field Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `prompt` | Yes | The input question or prompt to evaluate |
+| `referenceResponse` | Yes | The expected/ideal response for comparison |
+| `category` | Yes | Category label for grouping and filtering results |
+
+#### Why is `category` required?
+
+The `category` field is **required by AWS Bedrock evaluation jobs** for:
+
+1. **Results Grouping**: Allows you to analyze performance across different topic areas (e.g., "geography" vs "science")
+2. **Filtering**: Filter evaluation results by category to identify weak areas
+3. **Reporting**: Generate category-specific accuracy reports
+4. **Benchmarking**: Compare model performance across different domains
+
+You can use any string value for category - common examples:
+- Topic-based: `"geography"`, `"science"`, `"history"`, `"coding"`
+- Difficulty-based: `"easy"`, `"medium"`, `"hard"`
+- Source-based: `"faq"`, `"documentation"`, `"user-generated"`
+
 ---
 
 ## Python Evaluation Script
@@ -388,13 +410,32 @@ aws s3 sync s3://$LLM_JUDGE_BUCKET/results/ ./evaluation-results/
 
 ## Evaluation Metrics
 
-### Available Built-in Metrics
+### Available metricNames Options
 
-| Metric | Description |
-|--------|-------------|
-| `Builtin.Accuracy` | Measures text similarity between model response and reference |
-| `Builtin.Robustness` | Measures response consistency and semantic similarity |
-| `Builtin.Toxicity` | Detects harmful or inappropriate content |
+When creating an evaluation job, you can specify which metrics to evaluate using the `--metrics` flag or `metricNames` in the API. Available options:
+
+| Metric Name | Task Types | Description |
+|-------------|------------|-------------|
+| `Builtin.Accuracy` | QuestionAndAnswer, Generation | Measures text similarity between model response and reference response |
+| `Builtin.Robustness` | QuestionAndAnswer, Generation | Measures response consistency, coherence, and semantic quality |
+| `Builtin.Toxicity` | All | Detects harmful, offensive, or inappropriate content |
+| `Builtin.Correctness` | QuestionAndAnswer | Evaluates factual correctness of responses |
+| `Builtin.Completeness` | Summarization | Measures how completely the summary covers key points |
+| `Builtin.Relevance` | QuestionAndAnswer, Summarization | Evaluates how relevant the response is to the prompt |
+| `Builtin.Faithfulness` | Summarization | Measures if summary is faithful to source without hallucination |
+
+### Using Multiple Metrics
+
+```bash
+# Specify multiple metrics
+python llm_judge_evaluation.py \
+  --dataset eval.jsonl \
+  --metrics Builtin.Accuracy Builtin.Robustness Builtin.Toxicity
+```
+
+### Default Metrics
+
+The script defaults to `Builtin.Accuracy` and `Builtin.Robustness` which are suitable for most QuestionAndAnswer evaluations.
 
 ### Understanding the Metrics
 
