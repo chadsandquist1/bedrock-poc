@@ -388,13 +388,88 @@ aws s3 sync s3://$LLM_JUDGE_BUCKET/results/ ./evaluation-results/
 
 ## Evaluation Metrics
 
-Available built-in metrics:
+### Available Built-in Metrics
 
 | Metric | Description |
 |--------|-------------|
-| `Builtin.Accuracy` | Measures factual correctness |
-| `Builtin.Robustness` | Measures consistency across similar prompts |
+| `Builtin.Accuracy` | Measures text similarity between model response and reference |
+| `Builtin.Robustness` | Measures response consistency and semantic similarity |
 | `Builtin.Toxicity` | Detects harmful or inappropriate content |
+
+### Understanding the Metrics
+
+#### Builtin.Accuracy
+**What it measures**: Lexical similarity between the model's response and the reference response using metrics like BLEU, ROUGE, or similar text comparison algorithms.
+
+**Score range**: 0.0 to 1.0 (higher is better)
+
+**Important notes**:
+- Scores are typically **low (0.15-0.30)** when the model provides detailed responses compared to short reference answers
+- A low accuracy score does NOT mean the answer is wrong - it means the text differs from the reference
+- Example: If the reference is "Paris is the capital of France" but the model responds with a detailed paragraph about Paris, the accuracy score will be low despite being correct
+
+#### Builtin.Robustness
+**What it measures**: Semantic consistency and coherence of the model's response. This evaluates how well-structured, complete, and contextually appropriate the response is.
+
+**Score range**: 0.0 to 100.0 (higher indicates more robust/complete responses)
+
+**Important notes**:
+- Higher scores indicate more comprehensive, well-structured responses
+- Measures factors like completeness, coherence, and semantic richness
+- A response with more context and explanation typically scores higher
+
+---
+
+## Example Evaluation Results
+
+The following are **example results** from running the evaluation script with `amazon.nova-lite-v1:0` model against the sample dataset:
+
+### Summary Table
+
+| Prompt | Accuracy | Robustness | Notes |
+|--------|----------|------------|-------|
+| What is the capital of France? | 0.20 | 17.88 | Model provided detailed response vs short reference |
+| Explain what RAG stands for in AI | 0.23 | 43.29 | Comprehensive explanation scored higher robustness |
+| What is photosynthesis? | 0.17 | 38.69 | Detailed scientific explanation |
+| What are the three states of matter? | 0.21 | 44.85 | Included additional context about plasma |
+| Who wrote Romeo and Juliet? | 0.17 | 18.45 | Added historical context |
+
+### Example Output (JSONL format)
+
+Each result in the output file contains:
+
+```json
+{
+  "automatedEvaluationResult": {
+    "scores": [
+      {"metricName": "Builtin.Accuracy", "result": 0.196},
+      {"metricName": "Builtin.Robustness", "result": 17.878}
+    ]
+  },
+  "inputRecord": {
+    "prompt": "What is the capital of France?",
+    "referenceResponse": "Paris is the capital of France.",
+    "category": "geography"
+  },
+  "modelResponses": [
+    {
+      "response": "The capital of France is Paris. Paris is not only the capital but also the largest city in France, known for its significant historical, cultural, and artistic contributions...",
+      "modelIdentifier": "amazon.nova-lite-v1:0",
+      "stopReason": "end_turn"
+    }
+  ]
+}
+```
+
+### Interpreting Results
+
+- **Low Accuracy + High Robustness**: Model provided correct but verbose answers (common with capable models)
+- **High Accuracy + Low Robustness**: Model closely matched reference but may lack depth
+- **Low Accuracy + Low Robustness**: May indicate issues with response quality
+
+For RAG evaluations, focus on **Robustness** for response quality and manually verify factual correctness, as Accuracy primarily measures text similarity rather than semantic correctness.
+
+---
 
 ## Cost Considerations
 
