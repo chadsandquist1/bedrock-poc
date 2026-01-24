@@ -7,6 +7,7 @@ locals {
   region             = var.aws_region
   vector_bucket_name = "${var.vector_bucket_name}-${local.account_id}"
   resource_prefix    = "${var.project_name}-${var.environment}"
+  knowledge_base_id  = "ZI2DHYWRGS" # Hardcoded KB ID for CloudWatch Logs filtering
 }
 
 # -----------------------------------------------------------------------------

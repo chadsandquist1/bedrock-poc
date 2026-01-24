@@ -77,3 +77,6 @@ evaluation-results/
 *.secrets
 *credentials*
 !*credentials*.example
+
+# Lambda artifacts
+scripts/lambda_ingestion_handler.zip
