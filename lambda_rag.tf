@@ -142,7 +142,7 @@ resource "aws_lambda_function" "semantic_rag" {
 
   tags = {
     Name        = "${local.resource_prefix}-semantic-rag"
-    Purpose     = "RAG test lambda — semantic (vector) search"
+    Purpose     = "RAG test lambda - semantic vector search"
     SearchType  = "SEMANTIC"
   }
 }
@@ -180,7 +180,7 @@ resource "aws_lambda_function" "hybrid_rag" {
 
   tags = {
     Name       = "${local.resource_prefix}-hybrid-rag"
-    Purpose    = "RAG test lambda — hybrid (vector + BM25) search"
+    Purpose    = "RAG test lambda - hybrid vector BM25 search"
     SearchType = "HYBRID"
   }
 }
