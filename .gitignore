@@ -80,3 +80,4 @@ evaluation-results/
 
 # Lambda artifacts
 scripts/lambda_ingestion_handler.zip
+scripts/*.zip
