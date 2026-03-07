@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is a Terraform-managed AWS proof-of-concept for a RAG (Retrieval-Augmented Generation) pipeline using AWS Bedrock Knowledge Base with S3 Vectors as the vector store. It also includes Lambda functions for semantic/hybrid RAG search and an LLM-as-a-Judge evaluation framework.
+This is a Terraform-managed AWS proof-of-concept for a RAG (Retrieval-Augmented Generation) pipeline using AWS Bedrock Knowledge Base with S3 Vectors as the vector store. It includes a hybrid RAG search Lambda and an LLM-as-a-Judge evaluation framework.
 
 ## Prerequisites
 
@@ -24,8 +24,6 @@ terraform plan
 terraform apply
 terraform destroy
 ```
-
-
 
 ### Post-deploy: upload docs and trigger ingestion
 
@@ -69,6 +67,7 @@ bedrock-poc/
 ├── .github/
 │   └── workflows/
 │       └── terraform.yml       # CI/CD: plan on PR, apply on merge to main
+├── .pre-commit-config.yaml     # Pre-commit hooks: ruff, terraform_fmt, shellcheck, etc.
 ├── terraform/                  # All Terraform configuration
 │   ├── main.tf                 # S3 buckets, IAM, S3 Vectors, Knowledge Base, Data Source
 │   ├── lambda_rag.tf           # Hybrid RAG test Lambda
@@ -101,7 +100,7 @@ Terraform zips the lambda source files at plan/apply time using `archive_file` d
 
 ### Key hardcoded value
 
-`knowledge_base_id = "ZI2DHYWRGS"` is hardcoded in `terraform/main.tf` locals. This is used for the CloudWatch Logs subscription filter log group path and is passed as an env var to all Lambdas. Update this after `terraform apply` if the KB was recreated.
+`knowledge_base_id = "ZI2DHYWRGS"` is hardcoded in `terraform/main.tf` locals. It is passed as an env var to the hybrid RAG Lambda. Update this after `terraform apply` if the KB was recreated.
 
 ### Embedding model & chunking
 
@@ -120,6 +119,33 @@ The `category` field is required by Bedrock evaluation jobs. The script auto-det
 ## Configuration
 
 Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` to override defaults. Resource names follow the pattern `${project_name}-${environment}-<resource>-${account_id}`.
+
+## Pre-commit Hooks
+
+`.pre-commit-config.yaml` runs on every `git commit`. Install once per machine:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Run against all files manually:
+
+```bash
+pre-commit run --all-files
+```
+
+| Hook | Source | What it does |
+|------|--------|-------------|
+| `trailing-whitespace` | pre-commit-hooks | Removes trailing whitespace |
+| `end-of-file-fixer` | pre-commit-hooks | Ensures files end with a newline |
+| `check-yaml` | pre-commit-hooks | Validates YAML syntax |
+| `check-json` | pre-commit-hooks | Validates JSON syntax |
+| `check-merge-conflict` | pre-commit-hooks | Blocks accidental conflict markers |
+| `ruff` | astral-sh/ruff-pre-commit | Python lint + auto-fix |
+| `ruff-format` | astral-sh/ruff-pre-commit | Python formatting |
+| `terraform_fmt` | antonbabenko/pre-commit-terraform | Terraform formatting |
+| `shellcheck` | shellcheck-py | Shell script linting |
 
 ## CI/CD (GitHub Actions)
 
