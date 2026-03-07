@@ -57,8 +57,11 @@ resource "aws_iam_role_policy" "citations_v1_bedrock" {
         Resource = local.rag_kb_arn
       },
       {
-        Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel"]
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:GetInferenceProfile",
+        ]
         Resource = local.claude_model_arn
       }
     ]
@@ -121,8 +124,11 @@ resource "aws_iam_role_policy" "citations_v2_bedrock" {
         Resource = local.rag_kb_arn
       },
       {
-        Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel"]
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:GetInferenceProfile",
+        ]
         Resource = local.claude_model_arn
       }
     ]
