@@ -29,3 +29,12 @@ repos:
     rev: v8.21.2
     hooks:
       - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: sam-local-invoke
+        name: SAM local Lambda smoke test
+        entry: tests/run_local_invoke.sh
+        language: script
+        pass_filenames: false
+        files: ^lambdas/

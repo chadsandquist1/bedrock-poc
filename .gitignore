@@ -83,3 +83,9 @@ scripts/tmp/
 
 # Lambda artifacts
 lambdas/*.zip
+
+# SAM build artifacts
+.aws-sam/
+
+# Local test env vars (contains account-specific values)
+tests/env.json
