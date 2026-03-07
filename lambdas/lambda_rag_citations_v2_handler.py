@@ -50,7 +50,7 @@ def _build_document_blocks(chunks):
                     "name": filename,
                     "format": "txt",
                     "source": {"bytes": chunk["text"].encode("utf-8")},
-                    "citationsConfig": {"enabled": True},
+                    "citations": {"enabled": True},
                 }
             }
         )
