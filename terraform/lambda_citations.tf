@@ -62,7 +62,10 @@ resource "aws_iam_role_policy" "citations_v1_bedrock" {
           "bedrock:InvokeModel",
           "bedrock:GetInferenceProfile",
         ]
-        Resource = local.claude_model_arn
+        Resource = [
+          local.claude_model_arn,
+          local.claude_foundation_model_arn,
+        ]
       }
     ]
   })
@@ -129,7 +132,10 @@ resource "aws_iam_role_policy" "citations_v2_bedrock" {
           "bedrock:InvokeModel",
           "bedrock:GetInferenceProfile",
         ]
-        Resource = local.claude_model_arn
+        Resource = [
+          local.claude_model_arn,
+          local.claude_foundation_model_arn,
+        ]
       }
     ]
   })
