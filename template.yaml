@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 60
+    MemorySize: 256
+
+Resources:
+  CitationsV1:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_rag_citations_v1_handler.lambda_handler
+      CodeUri: lambdas/
+
+  CitationsV2:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_rag_citations_v2_handler.lambda_handler
+      CodeUri: lambdas/
