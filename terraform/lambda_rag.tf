@@ -8,8 +8,8 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  claude_model_id  = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-  claude_model_arn = "arn:aws:bedrock:${local.region}::foundation-model/${local.claude_model_id}"
+  claude_model_id  = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+  claude_model_arn = "arn:aws:bedrock:${local.region}:${local.account_id}:inference-profile/${local.claude_model_id}"
   rag_kb_id        = local.knowledge_base_id
   rag_kb_arn       = "arn:aws:bedrock:${local.region}:${local.account_id}:knowledge-base/${local.rag_kb_id}"
 }
