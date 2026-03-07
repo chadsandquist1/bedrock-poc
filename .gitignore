@@ -35,12 +35,14 @@ dist-ssr
 
 # Terraform
 .terraform/
+terraform/.terraform/
 *.tfstate
 *.tfstate.*
 *.tfstate.backup
 .terraform.lock.hcl
+terraform/.terraform.lock.hcl
 *.tfvars
-!terraform.tfvars.example
+!terraform/terraform.tfvars.example
 crash.log
 override.tf
 override.tf.json
@@ -79,5 +81,4 @@ evaluation-results/
 !*credentials*.example
 
 # Lambda artifacts
-scripts/lambda_ingestion_handler.zip
-scripts/*.zip
+lambdas/*.zip

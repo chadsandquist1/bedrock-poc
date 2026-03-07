@@ -1,7 +1,7 @@
 data "archive_file" "ingestion_lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/scripts/lambda_ingestion_handler.py"
-  output_path = "${path.module}/scripts/lambda_ingestion_handler.zip"
+  source_file = "${path.module}/../lambdas/lambda_ingestion_handler.py"
+  output_path = "${path.module}/../lambdas/lambda_ingestion_handler.zip"
 }
 
 resource "aws_iam_role" "ingestion_lambda_execution" {

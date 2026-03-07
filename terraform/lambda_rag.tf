@@ -19,14 +19,14 @@ locals {
 # -----------------------------------------------------------------------------
 data "archive_file" "semantic_rag_zip" {
   type        = "zip"
-  source_file = "${path.module}/scripts/lambda_semantic_rag_handler.py"
-  output_path = "${path.module}/scripts/lambda_semantic_rag_handler.zip"
+  source_file = "${path.module}/../lambdas/lambda_semantic_rag_handler.py"
+  output_path = "${path.module}/../lambdas/lambda_semantic_rag_handler.zip"
 }
 
 data "archive_file" "hybrid_rag_zip" {
   type        = "zip"
-  source_file = "${path.module}/scripts/lambda_hybrid_rag_handler.py"
-  output_path = "${path.module}/scripts/lambda_hybrid_rag_handler.zip"
+  source_file = "${path.module}/../lambdas/lambda_hybrid_rag_handler.py"
+  output_path = "${path.module}/../lambdas/lambda_hybrid_rag_handler.zip"
 }
 
 # -----------------------------------------------------------------------------

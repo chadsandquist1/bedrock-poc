@@ -73,7 +73,7 @@ class LLMJudgeEvaluator:
                 ["terraform", "output", "-raw", output_name],
                 capture_output=True,
                 text=True,
-                cwd=Path(__file__).parent.parent
+                cwd=Path(__file__).parent.parent / "terraform"
             )
             if result.returncode == 0:
                 return result.stdout.strip()
