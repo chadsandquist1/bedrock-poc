@@ -73,6 +73,14 @@ resource "aws_iam_role_policy" "rag_test_bedrock" {
           local.claude_model_arn,
           local.claude_foundation_model_arn,
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "aws-marketplace:ViewSubscriptions",
+          "aws-marketplace:Subscribe",
+        ]
+        Resource = "*"
       }
     ]
   })

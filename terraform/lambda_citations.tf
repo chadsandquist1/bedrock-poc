@@ -66,6 +66,14 @@ resource "aws_iam_role_policy" "citations_v1_bedrock" {
           local.claude_model_arn,
           local.claude_foundation_model_arn,
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "aws-marketplace:ViewSubscriptions",
+          "aws-marketplace:Subscribe",
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -136,6 +144,14 @@ resource "aws_iam_role_policy" "citations_v2_bedrock" {
           local.claude_model_arn,
           local.claude_foundation_model_arn,
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "aws-marketplace:ViewSubscriptions",
+          "aws-marketplace:Subscribe",
+        ]
+        Resource = "*"
       }
     ]
   })
