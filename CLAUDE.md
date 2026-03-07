@@ -69,6 +69,9 @@ aws lambda invoke --function-name bedrock-rag-dev-hybrid-rag \
 
 ```
 bedrock-poc/
+├── .github/
+│   └── workflows/
+│       └── terraform.yml       # CI/CD: plan on PR, apply on merge to main
 ├── terraform/                  # All Terraform configuration
 │   ├── main.tf                 # S3 buckets, IAM, S3 Vectors, Knowledge Base, Data Source
 │   ├── lambda.tf               # Ingestion handler Lambda + CloudWatch log group
@@ -84,6 +87,7 @@ bedrock-poc/
 │   ├── lambda_semantic_rag_handler.py
 │   └── lambda_hybrid_rag_handler.py
 └── scripts/                    # Operational scripts and sample data
+    ├── bootstrap-tf-backend.sh # One-time S3 + DynamoDB backend setup (already run)
     ├── llm_judge_evaluation.py
     ├── requirements.txt
     ├── sample-evaluation-dataset.jsonl
@@ -125,3 +129,40 @@ The `category` field is required by Bedrock evaluation jobs. The script auto-det
 ## Configuration
 
 Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` to override defaults. Resource names follow the pattern `${project_name}-${environment}-<resource>-${account_id}`.
+
+## CI/CD (GitHub Actions)
+
+`.github/workflows/terraform.yml` runs on every PR and push to `main`:
+
+- **Pull request**: `terraform plan` output is posted as a PR comment (old bot comments are replaced)
+- **Push to main**: `terraform apply` runs automatically using the saved plan
+
+### Remote state
+
+| Setting | Value |
+|---------|-------|
+| S3 bucket | `bedrock-rag-tfstate-741448928264` |
+| State key | `bedrock-poc/terraform.tfstate` |
+| Lock table | `bedrock-rag-tfstate-lock` (DynamoDB, PAY_PER_REQUEST) |
+| Region | `us-east-1` |
+
+Backend is configured in `terraform/providers.tf`. State was migrated from local with `terraform init -migrate-state`.
+
+### Required GitHub Secrets
+
+Add these in `Settings → Secrets and variables → Actions`:
+
+| Secret | Description |
+|--------|-------------|
+| `AWS_ACCESS_KEY_ID` | IAM user with Bedrock + S3 + Lambda permissions |
+| `AWS_SECRET_ACCESS_KEY` | Corresponding secret key |
+
+`GITHUB_TOKEN` is automatically provided by GitHub — no action needed.
+
+### Bootstrap script
+
+`scripts/bootstrap-tf-backend.sh` creates the S3 bucket and DynamoDB table. **Already run for this repo — do not re-run** unless recreating from scratch in a new account.
+
+### `terraform destroy` caveat
+
+Destroy from CI is **unsafe**: `null_resource` provisioners write KB/DS IDs to `/tmp/*.txt`, which are ephemeral on GitHub-hosted runners. Always run `terraform destroy` locally, or pre-populate the ID files from AWS CLI before running destroy on a fresh machine.

@@ -1,6 +1,14 @@
 terraform {
   required_version = ">= 1.0"
 
+  backend "s3" {
+    bucket         = "bedrock-rag-tfstate-741448928264"
+    key            = "bedrock-poc/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "bedrock-rag-tfstate-lock"
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
