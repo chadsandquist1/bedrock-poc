@@ -58,7 +58,7 @@ def _build_document_blocks(chunks):
                 "document": {
                     "name": filename,
                     "format": "txt",
-                    "source": {"bytes": chunk["text"].encode("utf-8")},
+                    "source": {"text": chunk["text"]},
                     "citations": {"enabled": True},
                 }
             }
@@ -117,26 +117,30 @@ def _parse_citations_response(content_blocks, chunks):
             html_parts.append(text_segment + sup_tags)
             continue
 
-        # citationsContentBlock shape (alternative Bedrock wrapper)
-        if "citationsContentBlock" in block:
-            for sub in block["citationsContentBlock"].get("content", []):
-                if "textBlock" in sub:
-                    html_parts.append(sub["textBlock"]["text"])
-                elif "citationsBlock" in sub:
-                    for citation in sub["citationsBlock"].get("citations", []):
-                        cited_text = citation.get("citedText", "")
-                        ref_info = citation.get("reference", {})
-                        doc_info = ref_info.get("documentBlock", {}) or ref_info.get(
-                            "document", {}
-                        )
-                        title = doc_info.get("title", "") or doc_info.get("name", "")
-                        uri = _resolve_uri_by_title(title, chunks)
-                        sup = f'<sup><a href="#ref-{ref_n}">[{ref_n}]</a></sup>'
-                        references.append(
-                            {"ref_n": ref_n, "source": uri, "cited_text": cited_text}
-                        )
-                        html_parts.append(cited_text + sup)
-                        ref_n += 1
+        # citationsContent shape (Converse API with source.text documents)
+        if "citationsContent" in block:
+            cc = block["citationsContent"]
+            cited_text = "".join(
+                item["text"] for item in cc.get("content", []) if "text" in item
+            )
+            block_refs = []
+            for citation in cc.get("citations", []):
+                title = citation.get("title", "")
+                source_text = "".join(
+                    sc["text"]
+                    for sc in citation.get("sourceContent", [])
+                    if "text" in sc
+                )
+                uri = _resolve_uri_by_title(title, chunks)
+                references.append(
+                    {"ref_n": ref_n, "source": uri, "cited_text": source_text}
+                )
+                block_refs.append(ref_n)
+                ref_n += 1
+            sup_tags = "".join(
+                f'<sup><a href="#ref-{n}">[{n}]</a></sup>' for n in block_refs
+            )
+            html_parts.append(cited_text + sup_tags)
             continue
 
         # Fallback: treat any remaining block with text as plain text
