@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import time
 
 import boto3
@@ -39,11 +40,19 @@ def _retrieve_chunks(query):
     return chunks
 
 
+def _sanitize_doc_name(name):
+    """Strip characters disallowed by the Converse API document name rules."""
+    name = re.sub(r"[^a-zA-Z0-9\s\-\(\)\[\]]", " ", name)
+    name = re.sub(r" {2,}", " ", name).strip()
+    return name or "document"
+
+
 def _build_document_blocks(chunks):
     """Convert KB chunks to Converse API DocumentBlocks with citations enabled."""
     blocks = []
     for i, chunk in enumerate(chunks):
-        filename = chunk["uri"].rsplit("/", 1)[-1] if chunk["uri"] else f"doc-{i}"
+        raw_name = chunk["uri"].rsplit("/", 1)[-1] if chunk["uri"] else f"doc-{i}"
+        filename = _sanitize_doc_name(raw_name)
         blocks.append(
             {
                 "document": {
