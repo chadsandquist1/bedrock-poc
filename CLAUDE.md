@@ -25,6 +25,8 @@ terraform apply
 terraform destroy
 ```
 
+
+
 ### Post-deploy: upload docs and trigger ingestion
 
 ```bash
@@ -51,14 +53,9 @@ export EVALUATION_JOB_ARN='arn:aws:bedrock:...'
 python llm_judge_evaluation.py
 ```
 
-### Invoke RAG Lambdas manually
+### Invoke RAG Lambda manually
 
 ```bash
-# Semantic search
-aws lambda invoke --function-name bedrock-rag-dev-semantic-rag \
-  --payload '{"query": "What is photosynthesis?"}' \
-  --cli-binary-format raw-in-base64-out /dev/stdout
-
 # Hybrid search (requires OpenSearch Serverless KB, not S3 Vectors)
 aws lambda invoke --function-name bedrock-rag-dev-hybrid-rag \
   --payload '{"query": "What is photosynthesis?"}' \
@@ -74,17 +71,13 @@ bedrock-poc/
 │       └── terraform.yml       # CI/CD: plan on PR, apply on merge to main
 ├── terraform/                  # All Terraform configuration
 │   ├── main.tf                 # S3 buckets, IAM, S3 Vectors, Knowledge Base, Data Source
-│   ├── lambda.tf               # Ingestion handler Lambda + CloudWatch log group
-│   ├── lambda_rag.tf           # Semantic and Hybrid RAG test Lambdas
-│   ├── cloudwatch_logging.tf   # CW Logs subscription filter → ingestion Lambda
+│   ├── lambda_rag.tf           # Hybrid RAG test Lambda
 │   ├── llmasjudge.tf           # S3 bucket + IAM role for LLM-as-a-Judge evaluations
 │   ├── variables.tf
 │   ├── outputs.tf
 │   ├── providers.tf
 │   └── terraform.tfvars.example
 ├── lambdas/                    # Lambda handler source code
-│   ├── lambda_ingestion_handler.py
-│   ├── lambda_semantic_rag_handler.py
 │   └── lambda_hybrid_rag_handler.py
 └── scripts/                    # Operational scripts and sample data
     ├── bootstrap-tf-backend.sh # One-time S3 + DynamoDB backend setup (already run)
@@ -102,9 +95,7 @@ S3 Vectors and Bedrock Knowledge Base with `S3_VECTORS` storage type are not ful
 
 ### Lambda functions (all Python 3.11, source in `lambdas/`)
 
-- **`lambda_ingestion_handler.py`** — Decodes gzipped/base64 CloudWatch Logs events from the KB vendedlogs group and logs ingestion job status (STARTING, IN_PROGRESS, COMPLETE, FAILED).
-- **`lambda_semantic_rag_handler.py`** — Calls `bedrock-agent-runtime.retrieve_and_generate` with `overrideSearchType: SEMANTIC`. Input: `{"query": "..."}`.
-- **`lambda_hybrid_rag_handler.py`** — Same as semantic but with `overrideSearchType: HYBRID`. Only works with OpenSearch Serverless-backed KBs, not S3 Vectors.
+- **`lambda_hybrid_rag_handler.py`** — Calls `bedrock-agent-runtime.retrieve_and_generate` with `overrideSearchType: HYBRID`. Only works with OpenSearch Serverless-backed KBs, not S3 Vectors. Input: `{"query": "..."}`.
 
 Terraform zips the lambda source files at plan/apply time using `archive_file` data sources; the `.zip` files are written to `lambdas/` and are gitignored.
 

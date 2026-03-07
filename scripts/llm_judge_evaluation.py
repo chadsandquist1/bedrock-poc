@@ -32,9 +32,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict
-
-
+from typing import Optional, List
 
 
 try:
@@ -56,8 +54,12 @@ class LLMJudgeEvaluator:
         self.bedrock_client = boto3.client("bedrock", region_name=self.region)
         self.s3_client = boto3.client("s3", region_name=self.region)
         # Get configuration from environment or Terraform outputs
-        self.bucket_name = os.environ.get("LLM_JUDGE_BUCKET") or self._get_terraform_output("llm_judge_bucket_name")
-        self.role_arn = os.environ.get("EVALUATION_ROLE_ARN") or self._get_terraform_output("llm_judge_evaluation_role_arn")
+        self.bucket_name = os.environ.get(
+            "LLM_JUDGE_BUCKET"
+        ) or self._get_terraform_output("llm_judge_bucket_name")
+        self.role_arn = os.environ.get(
+            "EVALUATION_ROLE_ARN"
+        ) or self._get_terraform_output("llm_judge_evaluation_role_arn")
 
         if not self.bucket_name or not self.role_arn:
             print("Error: Could not determine bucket name or role ARN.")
@@ -69,11 +71,12 @@ class LLMJudgeEvaluator:
         """Get value from Terraform output."""
         try:
             import subprocess
+
             result = subprocess.run(
                 ["terraform", "output", "-raw", output_name],
                 capture_output=True,
                 text=True,
-                cwd=Path(__file__).parent.parent / "terraform"
+                cwd=Path(__file__).parent.parent / "terraform",
             )
             if result.returncode == 0:
                 return result.stdout.strip()
@@ -131,7 +134,13 @@ class LLMJudgeEvaluator:
         print(f"Dataset validation passed ({line_num} lines)")
 
     # Valid task types for Bedrock evaluation
-    VALID_TASK_TYPES = ["Summarization", "Classification", "QuestionAndAnswer", "Generation", "Custom"]
+    VALID_TASK_TYPES = [
+        "Summarization",
+        "Classification",
+        "QuestionAndAnswer",
+        "Generation",
+        "Custom",
+    ]
 
     def _get_inference_params(self, model_id: str) -> str:
         """Get the correct inference parameters based on model family.
@@ -149,7 +158,7 @@ class LLMJudgeEvaluator:
         job_name: str = None,
         model_id: str = None,
         metrics: List[str] = None,
-        task_type: str = "QuestionAndAnswer"
+        task_type: str = "QuestionAndAnswer",
     ) -> str:
         """
         Create a Bedrock evaluation job.
@@ -201,31 +210,21 @@ class LLMJudgeEvaluator:
                                 "taskType": task_type,
                                 "dataset": {
                                     "name": job_name,
-                                    "datasetLocation": {
-                                        "s3Uri": dataset_s3_uri
-                                    }
+                                    "datasetLocation": {"s3Uri": dataset_s3_uri},
                                 },
-                                "metricNames": metrics
+                                "metricNames": metrics,
                             }
                         ]
                     }
                 },
-                inferenceConfig={
-                    "models": [
-                        {
-                            "bedrockModel": bedrock_model_config
-                        }
-                    ]
-                },
-                outputDataConfig={
-                    "s3Uri": output_s3_uri
-                }
+                inferenceConfig={"models": [{"bedrockModel": bedrock_model_config}]},
+                outputDataConfig={"s3Uri": output_s3_uri},
             )
 
             job_arn = response["jobArn"]
-            print(f"\nEvaluation job created successfully!")
+            print("\nEvaluation job created successfully!")
             print(f"Job ARN: {job_arn}")
-            print(f"\nTo monitor this job later, set the environment variable:")
+            print("\nTo monitor this job later, set the environment variable:")
             print(f"  export EVALUATION_JOB_ARN='{job_arn}'")
 
             return job_arn
@@ -239,9 +238,7 @@ class LLMJudgeEvaluator:
     def get_job_status(self, job_arn: str) -> dict:
         """Get the current status of an evaluation job."""
         try:
-            response = self.bedrock_client.get_evaluation_job(
-                jobIdentifier=job_arn
-            )
+            response = self.bedrock_client.get_evaluation_job(jobIdentifier=job_arn)
             return {
                 "status": response.get("status"),
                 "jobName": response.get("jobName"),
@@ -249,7 +246,7 @@ class LLMJudgeEvaluator:
                 "creationTime": response.get("creationTime"),
                 "lastModifiedTime": response.get("lastModifiedTime"),
                 "failureMessages": response.get("failureMessages", []),
-                "outputDataConfig": response.get("outputDataConfig", {})
+                "outputDataConfig": response.get("outputDataConfig", {}),
             }
         except ClientError as e:
             error_code = e.response["Error"]["Code"]
@@ -257,7 +254,9 @@ class LLMJudgeEvaluator:
             print(f"Error getting job status: {error_code} - {error_message}")
             raise
 
-    def monitor_job(self, job_arn: str, timeout: int = 1800, poll_interval: int = 30) -> dict:
+    def monitor_job(
+        self, job_arn: str, timeout: int = 1800, poll_interval: int = 30
+    ) -> dict:
         """
         Monitor an evaluation job until completion.
 
@@ -269,7 +268,7 @@ class LLMJudgeEvaluator:
         Returns:
             Final job status
         """
-        print(f"\nMonitoring evaluation job...")
+        print("\nMonitoring evaluation job...")
         print(f"Job ARN: {job_arn}")
         print(f"Timeout: {timeout} seconds")
         print("-" * 60)
@@ -305,7 +304,9 @@ class LLMJudgeEvaluator:
 
             time.sleep(poll_interval)
 
-    def download_results(self, job_status: dict, output_dir: str = None) -> Optional[str]:
+    def download_results(
+        self, job_status: dict, output_dir: str = None
+    ) -> Optional[str]:
         """
         Download evaluation results from S3.
 
@@ -348,7 +349,7 @@ class LLMJudgeEvaluator:
             for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
                 for obj in page.get("Contents", []):
                     key = obj["Key"]
-                    relative_path = key[len(prefix):].lstrip("/")
+                    relative_path = key[len(prefix) :].lstrip("/")
                     if not relative_path:
                         continue
 
@@ -374,7 +375,7 @@ class LLMJudgeEvaluator:
         metrics: List[str] = None,
         task_type: str = "QuestionAndAnswer",
         timeout: int = 1800,
-        output_dir: str = None
+        output_dir: str = None,
     ) -> dict:
         """
         Run the full evaluation workflow.
@@ -395,10 +396,12 @@ class LLMJudgeEvaluator:
         job_arn = os.environ.get("EVALUATION_JOB_ARN")
 
         if job_arn:
-            print(f"Using existing evaluation job from EVALUATION_JOB_ARN")
+            print("Using existing evaluation job from EVALUATION_JOB_ARN")
         else:
             if not dataset_path:
-                print("Error: Either provide --dataset or set EVALUATION_JOB_ARN environment variable")
+                print(
+                    "Error: Either provide --dataset or set EVALUATION_JOB_ARN environment variable"
+                )
                 sys.exit(1)
 
             # Upload dataset and create job
@@ -408,7 +411,7 @@ class LLMJudgeEvaluator:
                 job_name=job_name,
                 model_id=model_id,
                 metrics=metrics,
-                task_type=task_type
+                task_type=task_type,
             )
 
             # Set environment variable for future reference
@@ -422,12 +425,11 @@ class LLMJudgeEvaluator:
         if final_status.get("status") == "Completed":
             results_path = self.download_results(final_status, output_dir)
 
-        return {
-            "status": final_status,
-            "results_path": results_path
-        }
+        return {"status": final_status, "results_path": results_path}
+
 
 DEFAULT_MODEL_ID = ""
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -444,48 +446,52 @@ Examples:
 
   # Create job with custom settings
   python llm_judge_evaluation.py --dataset eval.jsonl --job-name my-eval --model us.amazon.nova-lite-v1:0
-        """
+        """,
     )
 
     parser.add_argument(
-        "--dataset", "-d",
-        help="Path to local JSONL evaluation dataset"
+        "--dataset", "-d", help="Path to local JSONL evaluation dataset"
     )
     parser.add_argument(
-        "--job-name", "-n",
-        help="Name for the evaluation job (auto-generated if not provided)"
+        "--job-name",
+        "-n",
+        help="Name for the evaluation job (auto-generated if not provided)",
     )
     parser.add_argument(
-        "--model", "-m",
-        default=DEFAULT_MODEL_ID,
-        help="Model ID to evaluate"
+        "--model", "-m", default=DEFAULT_MODEL_ID, help="Model ID to evaluate"
     )
     parser.add_argument(
         "--metrics",
         nargs="+",
         default=["Builtin.Accuracy", "Builtin.Robustness"],
-        help="Metrics to evaluate (default: Builtin.Accuracy Builtin.Robustness)"
+        help="Metrics to evaluate (default: Builtin.Accuracy Builtin.Robustness)",
     )
     parser.add_argument(
         "--task-type",
-        choices=["Summarization", "Classification", "QuestionAndAnswer", "Generation", "Custom"],
+        choices=[
+            "Summarization",
+            "Classification",
+            "QuestionAndAnswer",
+            "Generation",
+            "Custom",
+        ],
         default="QuestionAndAnswer",
-        help="Task type for evaluation (default: QuestionAndAnswer)"
+        help="Task type for evaluation (default: QuestionAndAnswer)",
     )
     parser.add_argument(
-        "--timeout", "-t",
+        "--timeout",
+        "-t",
         type=int,
         default=1800,
-        help="Timeout in seconds for monitoring (default: 1800)"
+        help="Timeout in seconds for monitoring (default: 1800)",
     )
     parser.add_argument(
-        "--output-dir", "-o",
-        help="Directory to download results to (default: ./evaluation-results/<job-name>)"
+        "--output-dir",
+        "-o",
+        help="Directory to download results to (default: ./evaluation-results/<job-name>)",
     )
     parser.add_argument(
-        "--region",
-        default="us-east-1",
-        help="AWS region (default: us-east-1)"
+        "--region", default="us-east-1", help="AWS region (default: us-east-1)"
     )
 
     args = parser.parse_args()
@@ -493,7 +499,9 @@ Examples:
     # Check if we have a job ARN or dataset
     job_arn = os.environ.get("EVALUATION_JOB_ARN")
     if not job_arn and not args.dataset:
-        print("Error: Either provide --dataset or set EVALUATION_JOB_ARN environment variable")
+        print(
+            "Error: Either provide --dataset or set EVALUATION_JOB_ARN environment variable"
+        )
         print("\nTo create a new evaluation job:")
         print("  python llm_judge_evaluation.py --dataset /path/to/eval.jsonl")
         print("\nTo monitor an existing job:")
@@ -510,7 +518,7 @@ Examples:
         metrics=args.metrics,
         task_type=args.task_type,
         timeout=args.timeout,
-        output_dir=args.output_dir
+        output_dir=args.output_dir,
     )
 
     # Print summary
