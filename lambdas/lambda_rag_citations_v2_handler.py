@@ -47,18 +47,24 @@ def _sanitize_doc_name(name):
     return name or "document"
 
 
+def _clean_text(text):
+    """Remove non-printable characters that cause Bedrock to misidentify the content type."""
+    return re.sub(r"[^\x20-\x7E\n\r\t]", "", text)
+
+
 def _build_document_blocks(chunks):
     """Convert KB chunks to Converse API DocumentBlocks with citations enabled."""
     blocks = []
     for i, chunk in enumerate(chunks):
         raw_name = chunk["uri"].rsplit("/", 1)[-1] if chunk["uri"] else f"doc-{i}"
         filename = _sanitize_doc_name(raw_name)
+        clean_text = _clean_text(chunk["text"])
         blocks.append(
             {
                 "document": {
                     "name": filename,
                     "format": "txt",
-                    "source": {"text": chunk["text"]},
+                    "source": {"text": clean_text},
                     "citations": {"enabled": True},
                 }
             }
