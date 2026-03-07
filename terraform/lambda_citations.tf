@@ -131,7 +131,7 @@ resource "aws_iam_role_policy" "citations_v2_bedrock" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["bedrock-agent:Retrieve"]
+        Action   = ["bedrock:Retrieve"]
         Resource = local.rag_kb_arn
       },
       {
