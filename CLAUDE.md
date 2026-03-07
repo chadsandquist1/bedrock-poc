@@ -106,7 +106,7 @@ Terraform zips the lambda source files at plan/apply time using `archive_file` d
 
 - **Embeddings**: `amazon.titan-embed-text-v2:0` (1024 dimensions, cosine distance)
 - **Chunking**: Semantic chunking — configurable via `max_tokens`, `buffer_size`, `breakpoint_percentile_threshold` variables
-- **Generation model**: `anthropic.claude-3-5-sonnet-20241022-v2:0`
+- **Generation model**: `anthropic.claude-3-7-sonnet-20250219-v1:0`
 
 ### Evaluation dataset format (JSONL)
 

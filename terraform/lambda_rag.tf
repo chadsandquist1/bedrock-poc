@@ -8,10 +8,12 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  claude_model_id  = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
-  claude_model_arn = "arn:aws:bedrock:${local.region}:${local.account_id}:inference-profile/${local.claude_model_id}"
-  rag_kb_id        = local.knowledge_base_id
-  rag_kb_arn       = "arn:aws:bedrock:${local.region}:${local.account_id}:knowledge-base/${local.rag_kb_id}"
+  claude_model_id             = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+  claude_model_arn            = "arn:aws:bedrock:${local.region}:${local.account_id}:inference-profile/${local.claude_model_id}"
+  claude_foundation_model     = "anthropic.claude-3-7-sonnet-20250219-v1:0"
+  claude_foundation_model_arn = "arn:aws:bedrock:*::foundation-model/${local.claude_foundation_model}"
+  rag_kb_id                   = local.knowledge_base_id
+  rag_kb_arn                  = "arn:aws:bedrock:${local.region}:${local.account_id}:knowledge-base/${local.rag_kb_id}"
 }
 
 # -----------------------------------------------------------------------------
