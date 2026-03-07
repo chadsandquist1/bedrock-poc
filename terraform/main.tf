@@ -303,13 +303,13 @@ resource "null_resource" "bedrock_data_source" {
   depends_on = [time_sleep.wait_for_knowledge_base]
 
   triggers = {
-    kb_name             = "${local.resource_prefix}-knowledge-base"
-    data_source_name    = "${local.resource_prefix}-documents-source"
-    documents_bucket    = aws_s3_bucket.documents.arn
-    max_tokens          = var.max_tokens
-    buffer_size         = var.buffer_size
+    kb_name              = "${local.resource_prefix}-knowledge-base"
+    data_source_name     = "${local.resource_prefix}-documents-source"
+    documents_bucket     = aws_s3_bucket.documents.arn
+    max_tokens           = var.max_tokens
+    buffer_size          = var.buffer_size
     breakpoint_threshold = var.breakpoint_percentile_threshold
-    region              = local.region
+    region               = local.region
   }
 
   provisioner "local-exec" {

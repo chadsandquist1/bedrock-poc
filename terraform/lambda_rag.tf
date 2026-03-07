@@ -141,9 +141,9 @@ resource "aws_lambda_function" "semantic_rag" {
   }
 
   tags = {
-    Name        = "${local.resource_prefix}-semantic-rag"
-    Purpose     = "RAG test lambda - semantic vector search"
-    SearchType  = "SEMANTIC"
+    Name       = "${local.resource_prefix}-semantic-rag"
+    Purpose    = "RAG test lambda - semantic vector search"
+    SearchType = "SEMANTIC"
   }
 }
 
