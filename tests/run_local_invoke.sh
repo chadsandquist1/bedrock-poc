@@ -16,7 +16,7 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 cd "$REPO_ROOT"
-sam build --quiet
+sam build
 
 EVENT='{"query": "What is photosynthesis?"}'
 FAIL=0
