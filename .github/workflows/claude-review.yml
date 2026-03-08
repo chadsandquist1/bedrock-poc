@@ -3,17 +3,37 @@ name: Claude Code Review
 on:
   issue_comment:
     types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
 
 permissions:
   contents: read
   pull-requests: write
+  issues: write
+  id-token: write
 
 jobs:
   review:
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '@claude')
+    if: |
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.body, '@claude'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request and provide feedback on:
+            1. Correctness and potential bugs
+            2. Security vulnerabilities
+            3. Performance issues
+            4. Code maintainability and readability
+            5. Test coverage for new functionality
+
+            Be specific — reference file names and line numbers where relevant.
+            Follow the patterns and conventions already established in this codebase.
+          claude_args: "--max-turns 5"
