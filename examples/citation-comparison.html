@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citation Comparison</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      background: #f4f4f7;
+      color: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 24px;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 18px; margin-bottom: 4px; }
+    header .meta { font-size: 12px; color: #a0a8c0; }
+    .query-box {
+      background: #23234a;
+      color: #e0e4f4;
+      padding: 10px 24px;
+      font-style: italic;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .columns {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      gap: 1px;
+      background: #d0d4e0;
+    }
+    .col {
+      background: #fff;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .col-header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .col-header .subtitle {
+      font-size: 11px;
+      font-weight: 400;
+      color: #8892b0;
+      margin-top: 2px;
+    }
+    .col-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .answer { line-height: 1.7; }
+    .answer sup a {
+      color: #4a90e2;
+      text-decoration: none;
+      font-size: 10px;
+    }
+    .answer sup a:hover { text-decoration: underline; }
+    hr { border: none; border-top: 1px solid #e0e4ed; margin: 16px 0; }
+    .refs-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    ol.refs {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    ol.refs li {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #444;
+    }
+    ol.refs li a { color: #4a90e2; word-break: break-all; }
+    ol.refs li em { color: #666; }
+    .latency-badge {
+      display: inline-block;
+      margin-top: 12px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: #3730a3;
+    }
+    footer {
+      background: #1a1a2e;
+      color: #a0a8c0;
+      text-align: center;
+      padding: 10px 24px;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    footer strong { color: #fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Citation Comparison &mdash; V1 vs V2</h1>
+    <div class="meta">Generated: 2026-03-07 15:46:09 CST</div>
+  </header>
+  <div class="query-box">&ldquo;Give me a detailed overview of each topic covered across all the documents in the knowledge base, citing specific facts and details from each source.&rdquo;</div>
+
+  <div class="columns">
+    <!-- V1 -->
+    <div class="col">
+      <div class="col-header">
+        Option 1: RetrieveAndGenerate + Span
+        <div class="subtitle">bedrock-agent-runtime · retrieve_and_generate · citation spans</div>
+      </div>
+      <div class="col-body">
+        <div class="answer">**Photosynthesis: The Foundation of Life on Earth**
+
+Photosynthesis is the process by which plants, algae, and certain bacteria convert light energy into chemical energy. The basic chemical equation is: 6CO2 + 6H2O + Light Energy → C6H12O6 + 6O2. The key inputs required are sunlight (as the energy driver), water (absorbed via roots), carbon dioxide (taken in through pores called stomata), and chlorophyll (the green pigment that captures light). The outputs are glucose (used for energy and growth) and oxygen (released as a byproduct). The process takes place in organelles called chloroplasts, found primarily in plant leaves. Photosynthesis is critical for maintaining atmospheric oxygen levels and regulating CO2 in the air<sup><a href="#ref-1">[1]</a></sup>. **William Shakespeare: The Bard of Avon**
+
+William Shakespeare (1564–1616) was an English playwright, poet, and actor, broadly considered the greatest writer in the English language. He was born in Stratford-upon-Avon, England, married Anne Hathaway in 1582, and worked with the Lord Chamberlain's Men acting company. He was also a part owner of the Globe Theatre in London. His major tragedies include Hamlet, Macbeth, Othello, and King Lear, while his notable comedies include A Midsummer Night's Dream, The Merchant of Venice, Much Ado About Nothing, and Twelfth Night. Romeo and Juliet, one of his most famous works, was written around 1594–1596 and tells the story of two young lovers from feuding families in Verona, Italy. Shakespeare is credited with inventing over 1,700 words and phrases still in use today<sup><a href="#ref-2">[2]</a></sup>. **Retrieval-Augmented Generation (RAG) in Artificial Intelligence**
+
+RAG, or Retrieval-Augmented Generation, is an AI technique that combines retrieval systems with language model generation to produce more accurate and contextually relevant responses. It works in three phases: first, a retrieval phase where the system searches a knowledge base for relevant information; second, an augmentation phase where retrieved documents are combined with the original query; and third, a generation phase where a large language model uses both the query and the retrieved context to generate a response. Key benefits of RAG include reducing hallucinations by grounding responses in real documents, enabling access to information beyond the model's training data, providing verifiable citations, and being more cost-effective than fine-tuning models. RAG is widely used in enterprise AI applications, chatbots, and question-answering systems<sup><a href="#ref-3">[3]</a></sup>. **France Geography Overview**
+
+France is a large country in Western Europe featuring a diverse landscape of mountains, beaches, and countryside. Its capital is Paris, situated in the north-central part of the country along the Seine River. Paris is the most populous city in France, with over 2 million residents in the city proper and over 12 million in the greater metropolitan area. The city is home to iconic landmarks such as the Eiffel Tower, the Louvre Museum, Notre-Dame Cathedral, and the Arc de Triomphe. Paris is also a globally significant center for finance, diplomacy, commerce, fashion, gastronomy, science, and the arts. Other major cities in France include Marseille, Lyon, Toulouse, and Nice<sup><a href="#ref-4">[4]</a></sup>. **States of Matter: A Physics Overview**
+
+Matter is defined as anything that has mass and takes up space, and it exists in different states depending on temperature and pressure. The three basic states are: solids, where particles are tightly packed in a fixed arrangement giving a definite shape and volume (e.g., ice, rock, metal); liquids, where particles are close but can move around each other, giving a definite volume but no fixed shape (e.g., water, oil, milk); and gases, where particles are spread far apart and move freely, with no definite shape or volume (e.g., air, helium, oxygen). Matter can transition between states through processes like melting, freezing, evaporation, and condensation. Beyond the three basic states, scientists have identified additional states including plasma (found in stars and lightning) and Bose-Einstein condensate (achieved at extremely low temperatures)<sup><a href="#ref-5">[5]</a></sup>.</div>
+        <hr>
+        <div class="refs-title">References (5)</div>
+        <ol class="refs"><li id="ref-1"><strong>[1]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/photosynthesis-biology.txt">photosynthesis-biology.txt</a><br><em>Photosynthesis: The Foundation of Life on Earth  Photosynthesis is the process by which plants, algae, and some bacteria convert light energy into che</em></li> <li id="ref-2"><strong>[2]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/shakespeare-literature.txt">shakespeare-literature.txt</a><br><em>William Shakespeare: The Bard of Avon  William Shakespeare (1564-1616) was an English playwright, poet, and actor, widely regarded as the greatest wri</em></li> <li id="ref-3"><strong>[3]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/rag-ai-explanation.txt">rag-ai-explanation.txt</a><br><em>Understanding RAG in Artificial Intelligence  RAG stands for Retrieval-Augmented Generation. It is a technique in artificial intelligence that combine</em></li> <li id="ref-4"><strong>[4]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/france-geography.txt">france-geography.txt</a><br><em>France Geography Overview  France is a country located in Western Europe. It is one of the largest countries in Europe by area and has a diverse lands</em></li> <li id="ref-5"><strong>[5]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/states-of-matter.txt">states-of-matter.txt</a><br><em>States of Matter: A Physics Overview  Matter is anything that has mass and takes up space. All matter exists in different states depending on temperat</em></li> </ol>
+        <div class="latency-badge">&#9201; 12551ms</div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="col">
+      <div class="col-header">
+        Option 2: Retrieve + Converse Citations API
+        <div class="subtitle">bedrock-agent-runtime · retrieve · bedrock-runtime · converse</div>
+      </div>
+      <div class="col-body">
+        <div class="answer"># Overview of All Topics in the Knowledge Base
+
+---
+
+## 1. 🔬 States of Matter (Physics)
+
+Matter is anything that has mass and takes up space, and it exists in different states depending on temperature and pressure conditions.<sup><a href="#ref-1">[1]</a></sup>
+
+The three basic states are:
+
+- **Solid:** Particles are tightly packed in a fixed arrangement, giving solids a definite shape and volume. Particles vibrate in place but don't move freely. Examples include ice, rock, wood, and metal.<sup><a href="#ref-2">[2]</a></sup>
+- **Liquid:** Particles are close together but can move around each other. Liquids have a definite volume but take the shape of their container and can flow and be poured. Examples include water, milk, oil, and juice.<sup><a href="#ref-3">[3]</a></sup>
+- **Gas:** Particles are spread far apart and move freely, giving gases no definite shape or volume. They expand to fill their container. Examples include air, oxygen, helium, and water vapor.<sup><a href="#ref-4">[4]</a></sup>
+
+Matter can change from one state to another through processes like melting, freezing, evaporation, and condensation.<sup><a href="#ref-5">[5]</a></sup> Scientists have also identified additional states of matter, including plasma (found in stars and lightning) and Bose-Einstein condensate (achieved at extremely low temperatures).<sup><a href="#ref-6">[6]</a></sup>
+
+---
+
+## 2. 🗼 France Geography
+
+France is a country located in Western Europe and is one of the largest countries in Europe by area, featuring a diverse landscape including mountains, beaches, and countryside.<sup><a href="#ref-7">[7]</a></sup>
+
+The capital of France is Paris, located in the north-central part of the country along the Seine River. It is the most populous city in France, with over 2 million residents in the city proper and over 12 million in the metropolitan area.<sup><a href="#ref-8">[8]</a></sup>
+
+Paris is known for many famous landmarks including the Eiffel Tower, the Louvre Museum, Notre-Dame Cathedral, and the Arc de Triomphe.<sup><a href="#ref-9">[9]</a></sup> The city has been an important center of finance, diplomacy, commerce, fashion, gastronomy, science, and the arts.<sup><a href="#ref-10">[10]</a></sup> Other major cities in France include Marseille, Lyon, Toulouse, and Nice.<sup><a href="#ref-11">[11]</a></sup>
+
+---
+
+## 3. 🤖 RAG in Artificial Intelligence
+
+RAG stands for Retrieval-Augmented Generation — a technique in AI that combines the power of retrieval systems with language model generation to produce more accurate and contextually relevant responses.<sup><a href="#ref-12">[12]</a></sup>
+
+The process works in three phases:
+1. **Retrieval:** When a query is received, the system first searches through a knowledge base or document store to find relevant information.<sup><a href="#ref-13">[13]</a></sup>
+2. **Augmentation:** The retrieved documents are then combined with the original query to provide context.<sup><a href="#ref-14">[14]</a></sup>
+3. **Generation:** A large language model uses both the query and retrieved context to generate a response.<sup><a href="#ref-15">[15]</a></sup>
+
+Key benefits of RAG include reducing hallucinations by grounding responses in actual documents, allowing models to access up-to-date information beyond their training data, and being more cost-effective than fine-tuning models on specific domains. RAG is widely used in enterprise AI applications, chatbots, and question-answering systems.<sup><a href="#ref-16">[16]</a></sup>
+
+---
+
+## 4. 📖 William Shakespeare
+
+William Shakespeare (1564–1616) was an English playwright, poet, and actor, widely regarded as the greatest writer in the English language and the world's greatest dramatist.<sup><a href="#ref-17">[17]</a></sup>
+
+He was born in Stratford-upon-Avon, married Anne Hathaway in 1582, worked with the Lord Chamberlain's Men acting company, and was part owner of the Globe Theatre in London.<sup><a href="#ref-18">[18]</a></sup>
+
+One of his most celebrated works is *Romeo and Juliet*: written around 1594–1596, it is one of his most famous tragedies, telling the story of two young lovers from feuding families in Verona, Italy, and exploring themes of love, fate, and the destructive nature of feuds.<sup><a href="#ref-19">[19]</a></sup>
+
+Shakespeare's influence on literature, theater, and the English language is immeasurable — he invented over 1,700 words and phrases that we still use today.<sup><a href="#ref-20">[20]</a></sup>
+
+---
+
+## 5. 🌿 Photosynthesis (Biology)
+
+Photosynthesis is the process by which plants, algae, and some bacteria convert light energy into chemical energy. It is fundamental to life on Earth as it produces oxygen and serves as the primary source of energy for nearly all ecosystems.<sup><a href="#ref-21">[21]</a></sup>
+
+In simple terms, photosynthesis converts sunlight, water, and carbon dioxide into glucose and oxygen, represented by the equation: **6CO₂ + 6H₂O + Light Energy → C₆H₁₂O₆ + 6O₂**.<sup><a href="#ref-22">[22]</a></sup>
+
+Key inputs include sunlight for energy, water absorbed through roots, carbon dioxide absorbed through tiny pores called stomata, and chlorophyll — the green pigment that captures light energy. The process occurs primarily in organelles called chloroplasts.<sup><a href="#ref-23">[23]</a></sup> Photosynthesis is essential for maintaining atmospheric oxygen levels and removing carbon dioxide from the air.<sup><a href="#ref-24">[24]</a></sup></div>
+        <hr>
+        <div class="refs-title">References (24)</div>
+        <ol class="refs"><li id="ref-1"><strong>[1]</strong> <a href="states-of-matter txt">states-of-matter txt</a><br><em>States of Matter: A Physics Overview  Matter is anything that has mass and takes up space. All matter exists in different states depending on temperat</em></li> <li id="ref-2"><strong>[2]</strong> <a href="states-of-matter txt">states-of-matter txt</a><br><em>SOLID - Particles are tightly packed in a fixed arrangement - Has a definite shape and volume - Particles vibrate in place but don't move freely - Exa</em></li> <li id="ref-3"><strong>[3]</strong> <a href="states-of-matter txt">states-of-matter txt</a><br><em>LIQUID - Particles are close together but can move around each other - Has a definite volume but takes the shape of its container - Flows and can be p</em></li> <li id="ref-4"><strong>[4]</strong> <a href="states-of-matter txt">states-of-matter txt</a><br><em>GAS - Particles are spread far apart and move freely - Has no definite shape or volume - Expands to fill its container - Examples: air, oxygen, helium</em></li> <li id="ref-5"><strong>[5]</strong> <a href="states-of-matter txt">states-of-matter txt</a><br><em>Matter can change from one state to another through processes like melting, freezing, evaporation, and condensation.  </em></li> <li id="ref-6"><strong>[6]</strong> <a href="states-of-matter txt">states-of-matter txt</a><br><em>Additional States: Scientists have also identified other states of matter including plasma (found in stars and lightning) and Bose-Einstein condensate</em></li> <li id="ref-7"><strong>[7]</strong> <a href="france-geography txt">france-geography txt</a><br><em>France Geography Overview  France is a country located in Western Europe. It is one of the largest countries in Europe by area and has a diverse lands</em></li> <li id="ref-8"><strong>[8]</strong> <a href="france-geography txt">france-geography txt</a><br><em>The capital of France is Paris. Paris is located in the north-central part of the country along the Seine River. It is the most populous city in Franc</em></li> <li id="ref-9"><strong>[9]</strong> <a href="france-geography txt">france-geography txt</a><br><em>Paris is known for many famous landmarks including the Eiffel Tower, the Louvre Museum, Notre-Dame Cathedral, and the Arc de Triomphe. </em></li> <li id="ref-10"><strong>[10]</strong> <a href="france-geography txt">france-geography txt</a><br><em>The city has been an important center of finance, diplomacy, commerce, fashion, gastronomy, science, and the arts.  </em></li> <li id="ref-11"><strong>[11]</strong> <a href="france-geography txt">france-geography txt</a><br><em>Other major cities in France include Marseille, Lyon, Toulouse, and Nice.</em></li> <li id="ref-12"><strong>[12]</strong> <a href="rag-ai-explanation txt">rag-ai-explanation txt</a><br><em>Understanding RAG in Artificial Intelligence  RAG stands for Retrieval-Augmented Generation. It is a technique in artificial intelligence that combine</em></li> <li id="ref-13"><strong>[13]</strong> <a href="rag-ai-explanation txt">rag-ai-explanation txt</a><br><em>Retrieval Phase: When a query is received, the system first searches through a knowledge base or document store to find relevant information. </em></li> <li id="ref-14"><strong>[14]</strong> <a href="rag-ai-explanation txt">rag-ai-explanation txt</a><br><em>Augmentation Phase: The retrieved documents are then combined with the original query to provide context. </em></li> <li id="ref-15"><strong>[15]</strong> <a href="rag-ai-explanation txt">rag-ai-explanation txt</a><br><em>Generation Phase: A large language model uses both the query and retrieved context to generate a response.  </em></li> <li id="ref-16"><strong>[16]</strong> <a href="rag-ai-explanation txt">rag-ai-explanation txt</a><br><em>Benefits of RAG: - Reduces hallucinations by grounding responses in actual documents - Allows models to access up-to-date information beyond their tra</em></li> <li id="ref-17"><strong>[17]</strong> <a href="shakespeare-literature txt">shakespeare-literature txt</a><br><em>William Shakespeare: The Bard of Avon  William Shakespeare (1564-1616) was an English playwright, poet, and actor, widely regarded as the greatest wri</em></li> <li id="ref-18"><strong>[18]</strong> <a href="shakespeare-literature txt">shakespeare-literature txt</a><br><em>Life and Career: - Born in Stratford-upon-Avon, England - Married Anne Hathaway in 1582 - Worked with the Lord Chamberlain's Men acting company - Part</em></li> <li id="ref-19"><strong>[19]</strong> <a href="shakespeare-literature txt">shakespeare-literature txt</a><br><em>Life and Career: - Born in Stratford-upon-Avon, England - Married Anne Hathaway in 1582 - Worked with the Lord Chamberlain's Men acting company - Part</em></li> <li id="ref-20"><strong>[20]</strong> <a href="shakespeare-literature txt">shakespeare-literature txt</a><br><em>Shakespeare's influence on literature, theater, and the English language itself is immeasurable. He invented over 1,700 words and phrases that we stil</em></li> <li id="ref-21"><strong>[21]</strong> <a href="photosynthesis-biology txt">photosynthesis-biology txt</a><br><em>Photosynthesis: The Foundation of Life on Earth  Photosynthesis is the process by which plants, algae, and some bacteria convert light energy into che</em></li> <li id="ref-22"><strong>[22]</strong> <a href="photosynthesis-biology txt">photosynthesis-biology txt</a><br><em>The Basic Equation: 6CO2 + 6H2O + Light Energy  C6H12O6 + 6O2  In simple terms, photosynthesis is the process by which plants convert sunlight, water,</em></li> <li id="ref-23"><strong>[23]</strong> <a href="photosynthesis-biology txt">photosynthesis-biology txt</a><br><em>Key Components: - Sunlight: Provides the energy needed to drive the reaction - Water (H2O): Absorbed through the roots and transported to leaves - Car</em></li> <li id="ref-24"><strong>[24]</strong> <a href="photosynthesis-biology txt">photosynthesis-biology txt</a><br><em>The process is essential for maintaining atmospheric oxygen levels and removing carbon dioxide from the air.</em></li> </ol>
+        <div class="latency-badge">&#9201; 13258ms</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>V1:</strong> 12551ms &nbsp;|&nbsp;
+    <strong>V2:</strong> 13258ms &nbsp;|&nbsp;
+    <strong>Diff:</strong> V2 is 707ms faster
+  </footer>
+</body>
+</html>
