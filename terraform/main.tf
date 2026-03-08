@@ -8,6 +8,7 @@ locals {
   vector_bucket_name = "${var.vector_bucket_name}-${local.account_id}"
   resource_prefix    = "${var.project_name}-${var.environment}"
   knowledge_base_id  = "ZI2DHYWRGS" # Hardcoded KB ID for CloudWatch Logs filtering
+  data_source_id     = "IZP4FOAXOO" # Hardcoded DS ID; update after apply (see outputs for CLI command)
 }
 
 # -----------------------------------------------------------------------------

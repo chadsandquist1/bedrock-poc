@@ -22,24 +22,6 @@ SYSTEM_PROMPT = (
 )
 
 
-def _retrieve_chunks(query):
-    """Return a list of (uri, text) tuples from the KB."""
-    response = agent_runtime_client.retrieve(
-        knowledgeBaseId=KNOWLEDGE_BASE_ID,
-        retrievalQuery={"text": query},
-        retrievalConfiguration={
-            "vectorSearchConfiguration": {"numberOfResults": NUMBER_OF_RESULTS}
-        },
-    )
-    chunks = []
-    for result in response.get("retrievalResults", []):
-        uri = result.get("location", {}).get("s3Location", {}).get("uri", "")
-        text = result.get("content", {}).get("text", "")
-        chunks.append({"uri": uri, "text": text})
-    logger.info(f"Retrieved {len(chunks)} chunks from KB")
-    return chunks
-
-
 def _sanitize_doc_name(name):
     """Strip characters disallowed by the Converse API document name rules."""
     name = re.sub(r"[^a-zA-Z0-9\s\-\(\)\[\]]", " ", name)
@@ -52,117 +34,128 @@ def _clean_text(text):
     return re.sub(r"[^\x20-\x7E\n\r\t]", "", text)
 
 
-def _build_document_blocks(chunks):
-    """Convert KB chunks to Converse API DocumentBlocks with citations enabled."""
-    blocks = []
-    for i, chunk in enumerate(chunks):
-        raw_name = chunk["uri"].rsplit("/", 1)[-1] if chunk["uri"] else f"doc-{i}"
-        filename = _sanitize_doc_name(raw_name)
-        clean_text = _clean_text(chunk["text"])
-        blocks.append(
+def _retrieve_chunks(query):
+    """
+    Return KB chunks as dicts with uri, text, filename (from metadata), and
+    doc_name (sanitized for the Converse API). Pre-building doc_name here lets
+    us do an exact lookup later instead of heuristic URI matching.
+    """
+    response = agent_runtime_client.retrieve(
+        knowledgeBaseId=KNOWLEDGE_BASE_ID,
+        retrievalQuery={"text": query},
+        retrievalConfiguration={
+            "vectorSearchConfiguration": {"numberOfResults": NUMBER_OF_RESULTS}
+        },
+    )
+    chunks = []
+    for result in response.get("retrievalResults", []):
+        uri = result.get("location", {}).get("s3Location", {}).get("uri", "")
+        text = result.get("content", {}).get("text", "")
+        # Prefer the filename stored in metadata; fall back to parsing the URI.
+        filename = result.get("metadata", {}).get("filename") or uri.rsplit("/", 1)[-1]
+        chunks.append(
             {
-                "document": {
-                    "name": filename,
-                    "format": "txt",
-                    "source": {"text": clean_text},
-                    "citations": {"enabled": True},
-                }
+                "uri": uri,
+                "text": text,
+                "filename": filename,
+                "doc_name": _sanitize_doc_name(filename),
             }
         )
-    return blocks
+    logger.info("Retrieved %d chunks from KB", len(chunks))
+    return chunks
 
 
-def _parse_citations_response(content_blocks, chunks):
+def _build_document_blocks(chunks):
+    """Convert KB chunks to Converse API DocumentBlocks with citations enabled."""
+    return [
+        {
+            "document": {
+                "name": chunk["doc_name"],
+                "format": "txt",
+                "source": {"text": _clean_text(chunk["text"])},
+                "citations": {"enabled": True},
+            }
+        }
+        for chunk in chunks
+    ]
+
+
+def _parse_citations_response(content_blocks, chunk_by_name):
     """
-    Parse Converse API response content blocks and build inline HTML.
+    Parse Converse API response content blocks into inline HTML.
 
-    AWS Bedrock returns citation information in content blocks. When the Citations
-    API is active, the response may contain citationsContentBlock entries or
-    standard text blocks with citation metadata embedded.
-
-    We log the full structure on first parse to aid debugging in case the response
-    shape differs across SDK/model versions.
+    chunk_by_name maps each sanitized doc_name to its chunk dict, enabling
+    exact lookup when Converse returns a citation title.
     """
     logger.info(
-        f"Response content blocks (raw): {json.dumps(content_blocks, default=str)}"
+        "Response content blocks (raw): %s", json.dumps(content_blocks, default=str)
     )
 
     html_parts = []
     references = []
     ref_n = 1
 
+    def _make_sup(refs):
+        return "".join(f'<sup><a href="#ref-{n}">[{n}]</a></sup>' for n in refs)
+
+    def _record_citation(title, cited_text):
+        nonlocal ref_n
+        chunk = chunk_by_name.get(title, {})
+        references.append(
+            {
+                "ref_n": ref_n,
+                "source": chunk.get("filename") or chunk.get("uri") or title,
+                "cited_text": cited_text,
+            }
+        )
+        n = ref_n
+        ref_n += 1
+        return n
+
     for block in content_blocks:
-        # Standard text block — no citation
+        # Plain text block — no citation
         if "text" in block and len(block) == 1:
             html_parts.append(block["text"])
-            continue
 
-        # Text block that also carries inline citations (Anthropic Citations API shape
-        # as surfaced through AWS Converse API)
-        if "text" in block and "citations" in block:
-            text_segment = block["text"]
-            block_refs = []
-            for citation in block.get("citations", []):
-                cited_text = citation.get("citedText", "")
-                # The reference may point to a documentBlock or similar structure
-                ref_info = citation.get("reference", {})
-                doc_info = ref_info.get("documentBlock", {}) or ref_info.get(
-                    "document", {}
+        # Text block with inline citations (Anthropic Citations API via Converse)
+        elif "text" in block and "citations" in block:
+            ref_nums = [
+                _record_citation(
+                    title=(
+                        citation.get("reference", {}).get("documentBlock")
+                        or citation.get("reference", {}).get("document")
+                        or {}
+                    ).get("name", ""),
+                    cited_text=citation.get("citedText", ""),
                 )
-                title = doc_info.get("title", "") or doc_info.get("name", "")
-                uri = _resolve_uri_by_title(title, chunks)
-                references.append(
-                    {"ref_n": ref_n, "source": uri, "cited_text": cited_text}
-                )
-                block_refs.append(ref_n)
-                ref_n += 1
+                for citation in block.get("citations", [])
+            ]
+            html_parts.append(block["text"] + _make_sup(ref_nums))
 
-            sup_tags = "".join(
-                f'<sup><a href="#ref-{n}">[{n}]</a></sup>' for n in block_refs
-            )
-            html_parts.append(text_segment + sup_tags)
-            continue
-
-        # citationsContent shape (Converse API with source.text documents)
-        if "citationsContent" in block:
+        # citationsContent shape
+        elif "citationsContent" in block:
             cc = block["citationsContent"]
             cited_text = "".join(
                 item["text"] for item in cc.get("content", []) if "text" in item
             )
-            block_refs = []
-            for citation in cc.get("citations", []):
-                title = citation.get("title", "")
-                source_text = "".join(
-                    sc["text"]
-                    for sc in citation.get("sourceContent", [])
-                    if "text" in sc
+            ref_nums = [
+                _record_citation(
+                    title=citation.get("title", ""),
+                    cited_text="".join(
+                        sc["text"]
+                        for sc in citation.get("sourceContent", [])
+                        if "text" in sc
+                    ),
                 )
-                uri = _resolve_uri_by_title(title, chunks)
-                references.append(
-                    {"ref_n": ref_n, "source": uri, "cited_text": source_text}
-                )
-                block_refs.append(ref_n)
-                ref_n += 1
-            sup_tags = "".join(
-                f'<sup><a href="#ref-{n}">[{n}]</a></sup>' for n in block_refs
-            )
-            html_parts.append(cited_text + sup_tags)
-            continue
+                for citation in cc.get("citations", [])
+            ]
+            html_parts.append(cited_text + _make_sup(ref_nums))
 
-        # Fallback: treat any remaining block with text as plain text
-        if "text" in block:
+        # Fallback
+        elif "text" in block:
             html_parts.append(block["text"])
 
     return "".join(html_parts), references
-
-
-def _resolve_uri_by_title(title, chunks):
-    """Map a document name/title back to an S3 URI using the retrieved chunks list."""
-    for chunk in chunks:
-        filename = chunk["uri"].rsplit("/", 1)[-1] if chunk["uri"] else ""
-        if title and (title == filename or title in chunk["uri"]):
-            return chunk["uri"]
-    return title  # Fall back to the title itself if no match found
 
 
 def lambda_handler(event, context):
@@ -173,14 +166,17 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "Missing 'query' field in event payload"}),
         }
 
-    logger.info(f"Query: {query}")
-    logger.info(f"Knowledge Base ID: {KNOWLEDGE_BASE_ID}")
-    logger.info(f"Model ID: {MODEL_ID}")
-    logger.info(f"Number of results: {NUMBER_OF_RESULTS}")
+    logger.info(
+        "Query: %s | KB: %s | Model: %s | Results: %d",
+        query,
+        KNOWLEDGE_BASE_ID,
+        MODEL_ID,
+        NUMBER_OF_RESULTS,
+    )
 
     start_time = time.time()
 
-    # Step 1: Retrieve relevant chunks from KB
+    # Step 1: Retrieve chunks — filename comes from metadata, not URI parsing
     chunks = _retrieve_chunks(query)
     if not chunks:
         return {
@@ -196,27 +192,22 @@ def lambda_handler(event, context):
             ),
         }
 
-    # Step 2: Build Converse API message with DocumentBlocks
+    # Step 2: Build exact lookup and Converse document blocks
+    chunk_by_name = {c["doc_name"]: c for c in chunks}
     doc_blocks = _build_document_blocks(chunks)
-    messages = [
-        {
-            "role": "user",
-            "content": doc_blocks + [{"text": query}],
-        }
-    ]
 
     # Step 3: Invoke Converse API
     converse_response = bedrock_client.converse(
         modelId=MODEL_ID,
         system=[{"text": SYSTEM_PROMPT}],
-        messages=messages,
+        messages=[{"role": "user", "content": doc_blocks + [{"text": query}]}],
     )
 
     elapsed_ms = int((time.time() - start_time) * 1000)
-    logger.info(f"Retrieve + Converse completed in {elapsed_ms}ms")
+    logger.info("Retrieve + Converse completed in %dms", elapsed_ms)
 
     content_blocks = converse_response["output"]["message"]["content"]
-    html_response, references = _parse_citations_response(content_blocks, chunks)
+    html_response, references = _parse_citations_response(content_blocks, chunk_by_name)
 
     result = {
         "query": query,
@@ -225,11 +216,10 @@ def lambda_handler(event, context):
         "citation_count": len(references),
         "latency_ms": elapsed_ms,
     }
+    logger.info(
+        "Citation count: %d | HTML length: %d chars",
+        len(references),
+        len(html_response),
+    )
 
-    logger.info(f"Citation count: {len(references)}")
-    logger.info(f"HTML response length: {len(html_response)} chars")
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps(result),
-    }
+    return {"statusCode": 200, "body": json.dumps(result)}

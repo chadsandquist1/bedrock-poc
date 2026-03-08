@@ -64,6 +64,56 @@ pip install -r requirements.txt
 python llm_judge_evaluation.py --dataset sample-evaluation-dataset.jsonl
 ```
 
+## Lambda Functions
+
+### `bedrock-rag-dev-document-indexer`
+
+- Lists all `.txt` files in the documents S3 bucket, tokenizes each filename (e.g. `france-geography.txt` → `france`, `geography`), and writes a `document-index.txt` and per-file `.metadata.json` back to S3.
+- The index file uses natural-language sentences so vector search can answer meta-queries like *"find filenames with geography in the title"*.
+- Automatically starts a Bedrock ingestion job after uploading — run this after adding or removing documents.
+
+```bash
+aws lambda invoke --function-name bedrock-rag-dev-document-indexer --payload '{}' --cli-binary-format raw-in-base64-out /dev/stdout
+```
+
+---
+
+### `bedrock-rag-dev-hybrid-rag`
+
+- Calls `retrieve_and_generate` with `overrideSearchType: HYBRID` (BM25 + vector) and returns the generated answer plus extracted S3 citation URIs.
+- **Requires an OpenSearch Serverless-backed knowledge base** — will error at runtime against S3 Vectors (which is what this POC uses).
+- Input: `{"query": "..."}`.
+
+```bash
+aws lambda invoke --function-name bedrock-rag-dev-hybrid-rag --payload '{"query": "What is photosynthesis?"}' --cli-binary-format raw-in-base64-out /dev/stdout
+```
+
+---
+
+### `bedrock-rag-dev-rag-citations-v1`
+
+- Calls `retrieve_and_generate` (SEMANTIC, compatible with S3 Vectors) and post-processes the span offsets in the response to insert `<sup><a href="#ref-N">[N]</a></sup>` markers inline in the generated text.
+- Single API call; lower latency but no control over the generation prompt or citation placement.
+- Input: `{"query": "..."}`. Output: `html_response`, `references[]`, `latency_ms`.
+
+```bash
+aws lambda invoke --function-name bedrock-rag-dev-rag-citations-v1 --payload '{"query": "What is photosynthesis?"}' --cli-binary-format raw-in-base64-out /dev/stdout
+```
+
+---
+
+### `bedrock-rag-dev-rag-citations-v2`
+
+- Two-step: `retrieve()` fetches KB chunks, then `converse()` receives them as `DocumentBlock`s with `citationsConfig: {enabled: true}` so the model cites inline natively.
+- Full control over the system prompt and message structure; uses the Converse Citations API (Claude models only).
+- Input: `{"query": "..."}`. Output: `html_response`, `references[]`, `latency_ms`.
+
+```bash
+aws lambda invoke --function-name bedrock-rag-dev-rag-citations-v2 --payload '{"query": "What is photosynthesis?"}' --cli-binary-format raw-in-base64-out /dev/stdout
+```
+
+---
+
 ## Detailed Usage
 
 ### 1. Initialize Terraform
