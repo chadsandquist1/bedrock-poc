@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citation Comparison</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      background: #f4f4f7;
+      color: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 24px;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 18px; margin-bottom: 4px; }
+    header .meta { font-size: 12px; color: #a0a8c0; }
+    .query-box {
+      background: #23234a;
+      color: #e0e4f4;
+      padding: 10px 24px;
+      font-style: italic;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .columns {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      gap: 1px;
+      background: #d0d4e0;
+    }
+    .col {
+      background: #fff;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .col-header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .col-header .subtitle {
+      font-size: 11px;
+      font-weight: 400;
+      color: #8892b0;
+      margin-top: 2px;
+    }
+    .col-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .answer { line-height: 1.7; }
+    .answer sup a {
+      color: #4a90e2;
+      text-decoration: none;
+      font-size: 10px;
+    }
+    .answer sup a:hover { text-decoration: underline; }
+    hr { border: none; border-top: 1px solid #e0e4ed; margin: 16px 0; }
+    .refs-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    ol.refs {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    ol.refs li {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #444;
+    }
+    ol.refs li a { color: #4a90e2; word-break: break-all; }
+    ol.refs li em { color: #666; }
+    .latency-badge {
+      display: inline-block;
+      margin-top: 12px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: #3730a3;
+    }
+    footer {
+      background: #1a1a2e;
+      color: #a0a8c0;
+      text-align: center;
+      padding: 10px 24px;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    footer strong { color: #fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Citation Comparison &mdash; V1 vs V2</h1>
+    <div class="meta">Generated: 2026-03-08 16:59:17 CDT</div>
+  </header>
+  <div class="query-box">&ldquo;Give me a detailed overview of each topic covered across all the documents in the knowledge base, citing specific facts and details from each source.&rdquo;</div>
+
+  <div class="columns">
+    <!-- V1 -->
+    <div class="col">
+      <div class="col-header">
+        Option 1: RetrieveAndGenerate + Span
+        <div class="subtitle">bedrock-agent-runtime · retrieve_and_generate · citation spans</div>
+      </div>
+      <div class="col-body">
+        <div class="answer">**William Shakespeare**
+Shakespeare (1564–1616) was an English playwright, poet, and actor, widely considered the greatest writer in the English language. He was born in Stratford-upon-Avon, married Anne Hathaway in 1582, and worked with the Lord Chamberlain's Men acting company. He was also a part-owner of the Globe Theatre in London. His major tragedies include Hamlet, Macbeth, Othello, and King Lear, while his notable comedies include A Midsummer Night's Dream, The Merchant of Venice, Much Ado About Nothing, and Twelfth Night. Romeo and Juliet, written around 1594–1596, is among his most famous works, telling the story of two young lovers from feuding families in Verona, Italy. Shakespeare's influence on the English language is profound — he is credited with inventing over 1,700 words and phrases still in use today<sup><a href="#ref-1">[1]</a></sup>. **Retrieval-Augmented Generation (RAG) in AI**
+RAG is an artificial intelligence technique that combines retrieval systems with language model generation to produce accurate, contextually relevant responses. It works in three phases: first, a retrieval phase where relevant documents are fetched from a knowledge base; second, an augmentation phase where those documents are combined with the original query; and third, a generation phase where a large language model uses both the query and retrieved context to craft a response. Key benefits of RAG include reduced hallucinations by grounding outputs in real documents, access to information beyond a model's training data, the ability to provide citations, and cost-effectiveness compared to fine-tuning. RAG is widely used in enterprise AI applications, chatbots, and question-answering systems<sup><a href="#ref-2">[2]</a></sup>. **France Geography**
+France is a large country in Western Europe with a diverse landscape that includes mountains, beaches, and countryside. Its capital, Paris, is situated in the north-central part of the country along the Seine River. Paris has over 2 million residents in the city proper and over 12 million in its metropolitan area. The city is home to iconic landmarks such as the Eiffel Tower, the Louvre Museum, Notre-Dame Cathedral, and the Arc de Triomphe, and serves as a global center for finance, diplomacy, fashion, gastronomy, science, and the arts. Other major French cities include Marseille, Lyon, Toulouse, and Nice<sup><a href="#ref-3">[3]</a></sup>. **States of Matter**
+Matter, defined as anything with mass that takes up space, exists in different states depending on temperature and pressure. The three basic states are:
+- **Solid**: Particles are tightly packed in a fixed arrangement, giving solids a definite shape and volume. Examples include ice, rock, and metal.
+- **Liquid**: Particles are close but can move around each other, so liquids have a definite volume but take the shape of their container. Examples include water, milk, and oil.
+- **Gas**: Particles are spread far apart and move freely, meaning gases have no definite shape or volume and expand to fill their container. Examples include air, oxygen, and helium.
+
+Matter can transition between states through processes like melting, freezing, evaporation, and condensation. Beyond the three basic states, scientists have identified additional states such as plasma (found in stars and lightning) and Bose-Einstein condensate (achieved at extremely low temperatures)<sup><a href="#ref-4">[4]</a></sup>.</div>
+        <hr>
+        <div class="refs-title">References (4)</div>
+        <ol class="refs"><li id="ref-1"><strong>[1]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/shakespeare-literature.txt">shakespeare-literature.txt</a><br><em>William Shakespeare: The Bard of Avon  William Shakespeare (1564-1616) was an English playwright, poet, and actor, widely regarded as the greatest wri</em></li> <li id="ref-2"><strong>[2]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/rag-ai-explanation.txt">rag-ai-explanation.txt</a><br><em>Understanding RAG in Artificial Intelligence  RAG stands for Retrieval-Augmented Generation. It is a technique in artificial intelligence that combine</em></li> <li id="ref-3"><strong>[3]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/france-geography.txt">france-geography.txt</a><br><em>France Geography Overview  France is a country located in Western Europe. It is one of the largest countries in Europe by area and has a diverse lands</em></li> <li id="ref-4"><strong>[4]</strong> <a href="s3://bedrock-rag-dev-documents-741448928264/states-of-matter.txt">states-of-matter.txt</a><br><em>States of Matter: A Physics Overview  Matter is anything that has mass and takes up space. All matter exists in different states depending on temperat</em></li> </ol>
+        <div class="latency-badge">&#9201; 10552ms</div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="col">
+      <div class="col-header">
+        Option 2: Retrieve + Converse Citations API
+        <div class="subtitle">bedrock-agent-runtime · retrieve · bedrock-runtime · converse</div>
+      </div>
+      <div class="col-body">
+        <div class="answer"># Knowledge Base Overview
+
+Here is a detailed overview of each topic covered across all documents:
+
+---
+
+## 🗺️ France Geography
+
+France is a country located in Western Europe and is one of the largest countries in Europe by area, featuring a diverse landscape including mountains, beaches, and countryside.<sup><a href="#ref-1">[1]</a></sup>
+
+The capital of France is Paris, located in the north-central part of the country along the Seine River. It is the most populous city in France, with over 2 million residents in the city proper and over 12 million in the metropolitan area.<sup><a href="#ref-2">[2]</a></sup>
+
+Paris is home to many famous landmarks including the Eiffel Tower, the Louvre Museum, Notre-Dame Cathedral, and the Arc de Triomphe, and has long been an important center of finance, diplomacy, commerce, fashion, gastronomy, science, and the arts.<sup><a href="#ref-3">[3]</a></sup>
+
+Other major cities in France include Marseille, Lyon, Toulouse, and Nice.<sup><a href="#ref-4">[4]</a></sup>
+
+---
+
+## 🔬 States of Matter
+
+Matter is anything that has mass and takes up space, and all matter exists in different states depending on temperature and pressure conditions.<sup><a href="#ref-5">[5]</a></sup>
+
+The three basic states are:
+
+- **Solid** — particles are tightly packed in a fixed arrangement, giving solids a definite shape and volume. Particles vibrate in place but don't move freely. Examples include ice, rock, wood, and metal.<sup><a href="#ref-6">[6]</a></sup>
+
+- **Liquid** — particles are close together but can move around each other. Liquids have a definite volume but take the shape of their container and can flow and be poured. Examples include water, milk, oil, and juice.<sup><a href="#ref-7">[7]</a></sup>
+
+- **Gas** — particles are spread far apart and move freely. Gases have no definite shape or volume and expand to fill their container. Examples include air, oxygen, helium, and water vapor.<sup><a href="#ref-8">[8]</a></sup>
+
+Matter can change from one state to another through processes like melting, freezing, evaporation, and condensation.<sup><a href="#ref-9">[9]</a></sup>
+
+Scientists have also identified additional states of matter, including plasma (found in stars and lightning) and Bose-Einstein condensate (achieved at extremely low temperatures).<sup><a href="#ref-10">[10]</a></sup>
+
+---
+
+## 🤖 RAG in Artificial Intelligence
+
+RAG stands for Retrieval-Augmented Generation — a technique in artificial intelligence that combines the power of retrieval systems with language model generation to produce more accurate and contextually relevant responses.<sup><a href="#ref-11">[11]</a></sup>
+
+The process works in three phases:
+1. **Retrieval** — when a query is received, the system first searches through a knowledge base or document store to find relevant information.<sup><a href="#ref-12">[12]</a></sup>
+2. **Augmentation** — the retrieved documents are combined with the original query to provide context.<sup><a href="#ref-13">[13]</a></sup>
+3. **Generation** — a large language model uses both the query and retrieved context to generate a response.<sup><a href="#ref-14">[14]</a></sup>
+
+Key benefits of RAG include reducing hallucinations by grounding responses in actual documents, allowing models to access up-to-date information beyond their training data, providing citations and sources, and being more cost-effective than fine-tuning models on specific domains.<sup><a href="#ref-15">[15]</a></sup>
+
+---
+
+## 📚 Shakespeare & Literature
+
+William Shakespeare (1564–1616) was an English playwright, poet, and actor, widely regarded as the greatest writer in the English language and the world's greatest dramatist.<sup><a href="#ref-16">[16]</a></sup>
+
+Born in Stratford-upon-Avon, he married Anne Hathaway in 1582, worked with the Lord Chamberlain's Men acting company, and was a part owner of the Globe Theatre in London. His major works span tragedies such as Hamlet, Macbeth, Othello, and King Lear, as well as comedies including A Midsummer Night's Dream, The Merchant of Venice, Much Ado About Nothing, and Twelfth Night.<sup><a href="#ref-17">[17]</a></sup>
+
+Among his most celebrated works is *Romeo and Juliet*, written around 1594–1596, which tells the story of two young lovers from feuding families in Verona, Italy, exploring themes of love, fate, and the destructive nature of feuds.<sup><a href="#ref-18">[18]</a></sup>
+
+Shakespeare's influence on literature, theater, and the English language is immeasurable — he invented over 1,700 words and phrases that we still use today.<sup><a href="#ref-19">[19]</a></sup>
+
+---
+
+Each of these documents provides a solid foundational overview of its respective subject, from science and geography to literature and AI technology.</div>
+        <hr>
+        <div class="refs-title">References (19)</div>
+        <ol class="refs"><li id="ref-1"><strong>[1]</strong> <a href="france-geography.txt">france-geography.txt</a><br><em>France Geography Overview  France is a country located in Western Europe. It is one of the largest countries in Europe by area and has a diverse lands</em></li> <li id="ref-2"><strong>[2]</strong> <a href="france-geography.txt">france-geography.txt</a><br><em>The capital of France is Paris. Paris is located in the north-central part of the country along the Seine River. It is the most populous city in Franc</em></li> <li id="ref-3"><strong>[3]</strong> <a href="france-geography.txt">france-geography.txt</a><br><em>Paris is known for many famous landmarks including the Eiffel Tower, the Louvre Museum, Notre-Dame Cathedral, and the Arc de Triomphe. The city has be</em></li> <li id="ref-4"><strong>[4]</strong> <a href="france-geography.txt">france-geography.txt</a><br><em>Other major cities in France include Marseille, Lyon, Toulouse, and Nice.</em></li> <li id="ref-5"><strong>[5]</strong> <a href="states-of-matter.txt">states-of-matter.txt</a><br><em>States of Matter: A Physics Overview  Matter is anything that has mass and takes up space. All matter exists in different states depending on temperat</em></li> <li id="ref-6"><strong>[6]</strong> <a href="states-of-matter.txt">states-of-matter.txt</a><br><em>SOLID - Particles are tightly packed in a fixed arrangement - Has a definite shape and volume - Particles vibrate in place but don't move freely - Exa</em></li> <li id="ref-7"><strong>[7]</strong> <a href="states-of-matter.txt">states-of-matter.txt</a><br><em>LIQUID - Particles are close together but can move around each other - Has a definite volume but takes the shape of its container - Flows and can be p</em></li> <li id="ref-8"><strong>[8]</strong> <a href="states-of-matter.txt">states-of-matter.txt</a><br><em>GAS - Particles are spread far apart and move freely - Has no definite shape or volume - Expands to fill its container - Examples: air, oxygen, helium</em></li> <li id="ref-9"><strong>[9]</strong> <a href="states-of-matter.txt">states-of-matter.txt</a><br><em>Matter can change from one state to another through processes like melting, freezing, evaporation, and condensation.  </em></li> <li id="ref-10"><strong>[10]</strong> <a href="states-of-matter.txt">states-of-matter.txt</a><br><em>Additional States: Scientists have also identified other states of matter including plasma (found in stars and lightning) and Bose-Einstein condensate</em></li> <li id="ref-11"><strong>[11]</strong> <a href="rag-ai-explanation.txt">rag-ai-explanation.txt</a><br><em>Understanding RAG in Artificial Intelligence  RAG stands for Retrieval-Augmented Generation. It is a technique in artificial intelligence that combine</em></li> <li id="ref-12"><strong>[12]</strong> <a href="rag-ai-explanation.txt">rag-ai-explanation.txt</a><br><em>Retrieval Phase: When a query is received, the system first searches through a knowledge base or document store to find relevant information. </em></li> <li id="ref-13"><strong>[13]</strong> <a href="rag-ai-explanation.txt">rag-ai-explanation.txt</a><br><em>Augmentation Phase: The retrieved documents are then combined with the original query to provide context. </em></li> <li id="ref-14"><strong>[14]</strong> <a href="rag-ai-explanation.txt">rag-ai-explanation.txt</a><br><em>Generation Phase: A large language model uses both the query and retrieved context to generate a response.  </em></li> <li id="ref-15"><strong>[15]</strong> <a href="rag-ai-explanation.txt">rag-ai-explanation.txt</a><br><em>Benefits of RAG: - Reduces hallucinations by grounding responses in actual documents - Allows models to access up-to-date information beyond their tra</em></li> <li id="ref-16"><strong>[16]</strong> <a href="shakespeare-literature.txt">shakespeare-literature.txt</a><br><em>William Shakespeare: The Bard of Avon  William Shakespeare (1564-1616) was an English playwright, poet, and actor, widely regarded as the greatest wri</em></li> <li id="ref-17"><strong>[17]</strong> <a href="shakespeare-literature.txt">shakespeare-literature.txt</a><br><em>Life and Career: - Born in Stratford-upon-Avon, England - Married Anne Hathaway in 1582 - Worked with the Lord Chamberlain's Men acting company - Part</em></li> <li id="ref-18"><strong>[18]</strong> <a href="shakespeare-literature.txt">shakespeare-literature.txt</a><br><em>Life and Career: - Born in Stratford-upon-Avon, England - Married Anne Hathaway in 1582 - Worked with the Lord Chamberlain's Men acting company - Part</em></li> <li id="ref-19"><strong>[19]</strong> <a href="shakespeare-literature.txt">shakespeare-literature.txt</a><br><em>Shakespeare's influence on literature, theater, and the English language itself is immeasurable. He invented over 1,700 words and phrases that we stil</em></li> </ol>
+        <div class="latency-badge">&#9201; 12155ms</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>V1:</strong> 10552ms &nbsp;|&nbsp;
+    <strong>V2:</strong> 12155ms &nbsp;|&nbsp;
+    <strong>Diff:</strong> V2 is 1603ms faster
+  </footer>
+</body>
+</html>
