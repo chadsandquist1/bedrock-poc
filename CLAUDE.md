@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is a Terraform-managed AWS proof-of-concept for a RAG (Retrieval-Augmented Generation) pipeline using AWS Bedrock Knowledge Base with S3 Vectors as the vector store. It includes a hybrid RAG search Lambda and an LLM-as-a-Judge evaluation framework.
+This is a Terraform-managed AWS proof-of-concept for a RAG (Retrieval-Augmented Generation) pipeline using AWS Bedrock Knowledge Base with S3 Vectors as the vector store. It includes document indexing with filename metadata, inline citation Lambdas, and an LLM-as-a-Judge evaluation framework.
 
 ## Prerequisites
 
@@ -25,16 +25,30 @@ terraform apply
 terraform destroy
 ```
 
-### Post-deploy: upload docs and trigger ingestion
+### Post-deploy: upload docs and index metadata
 
 ```bash
-# Upload sample documents
+# 1. Upload sample documents
 aws s3 sync scripts/documents/ s3://$(cd terraform && terraform output -raw documents_bucket_name)/
 
-# Get KB and DS IDs, then start ingestion
-KB_ID=$(aws bedrock-agent list-knowledge-bases --region us-east-1 | jq -r '.knowledgeBaseSummaries[] | select(.name=="bedrock-rag-dev-knowledge-base") | .knowledgeBaseId')
-DS_ID=$(aws bedrock-agent list-data-sources --knowledge-base-id $KB_ID --region us-east-1 | jq -r '.dataSourceSummaries[0].dataSourceId')
-aws bedrock-agent start-ingestion-job --knowledge-base-id $KB_ID --data-source-id $DS_ID --region us-east-1
+# 2. Run the document indexer Lambda — generates document-index.txt, per-file
+#    .metadata.json files, and starts a Bedrock ingestion job automatically
+aws lambda invoke --function-name bedrock-rag-dev-document-indexer --payload '{}' --cli-binary-format raw-in-base64-out /dev/stdout
+```
+
+The document indexer replaces the manual ingestion workflow. There is no need to call `start-ingestion-job` separately.
+
+### Invoke RAG Lambdas
+
+```bash
+# Inline citations via Retrieve + Converse Citations API (recommended, S3 Vectors compatible)
+aws lambda invoke --function-name bedrock-rag-dev-rag-citations-v2 --payload '{"query": "What is photosynthesis?"}' --cli-binary-format raw-in-base64-out /dev/stdout
+
+# Inline citations via RetrieveAndGenerate + span post-processing
+aws lambda invoke --function-name bedrock-rag-dev-rag-citations-v1 --payload '{"query": "What is photosynthesis?"}' --cli-binary-format raw-in-base64-out /dev/stdout
+
+# Hybrid search (requires OpenSearch Serverless KB, not S3 Vectors — errors at runtime)
+aws lambda invoke --function-name bedrock-rag-dev-hybrid-rag --payload '{"query": "What is photosynthesis?"}' --cli-binary-format raw-in-base64-out /dev/stdout
 ```
 
 ### LLM-as-a-Judge evaluation script
@@ -51,39 +65,36 @@ export EVALUATION_JOB_ARN='arn:aws:bedrock:...'
 python llm_judge_evaluation.py
 ```
 
-### Invoke RAG Lambda manually
-
-```bash
-# Hybrid search (requires OpenSearch Serverless KB, not S3 Vectors)
-aws lambda invoke --function-name bedrock-rag-dev-hybrid-rag \
-  --payload '{"query": "What is photosynthesis?"}' \
-  --cli-binary-format raw-in-base64-out /dev/stdout
-```
-
 ## Repository Structure
 
 ```
 bedrock-poc/
 ├── .github/
 │   └── workflows/
-│       └── terraform.yml       # CI/CD: plan on PR, apply on merge to main
-├── .pre-commit-config.yaml     # Pre-commit hooks: ruff, terraform_fmt, shellcheck, etc.
-├── terraform/                  # All Terraform configuration
-│   ├── main.tf                 # S3 buckets, IAM, S3 Vectors, Knowledge Base, Data Source
-│   ├── lambda_rag.tf           # Hybrid RAG test Lambda
-│   ├── llmasjudge.tf           # S3 bucket + IAM role for LLM-as-a-Judge evaluations
+│       └── terraform.yml           # CI/CD: plan on PR, apply on merge to main
+├── .pre-commit-config.yaml         # Pre-commit hooks: ruff, terraform_fmt, shellcheck, etc.
+├── terraform/                      # All Terraform configuration
+│   ├── main.tf                     # S3 buckets, IAM, S3 Vectors, Knowledge Base, Data Source
+│   ├── lambda_rag.tf               # Hybrid RAG test Lambda
+│   ├── lambda_citations.tf         # V1 and V2 inline citation Lambdas
+│   ├── lambda_indexer.tf           # Document indexer Lambda
+│   ├── llmasjudge.tf               # S3 bucket + IAM role for LLM-as-a-Judge evaluations
 │   ├── variables.tf
 │   ├── outputs.tf
 │   ├── providers.tf
 │   └── terraform.tfvars.example
-├── lambdas/                    # Lambda handler source code
-│   └── lambda_hybrid_rag_handler.py
-└── scripts/                    # Operational scripts and sample data
-    ├── bootstrap-tf-backend.sh # One-time S3 + DynamoDB backend setup (already run)
+├── lambdas/                        # Lambda handler source code
+│   ├── lambda_hybrid_rag_handler.py
+│   ├── lambda_rag_citations_v1_handler.py
+│   ├── lambda_rag_citations_v2_handler.py
+│   ├── lambda_document_indexer_handler.py
+│   └── CITATIONS_README.md
+└── scripts/                        # Operational scripts and sample data
+    ├── bootstrap-tf-backend.sh     # One-time S3 + DynamoDB backend setup (already run)
     ├── llm_judge_evaluation.py
     ├── requirements.txt
     ├── sample-evaluation-dataset.jsonl
-    └── documents/              # Sample RAG source documents
+    └── documents/                  # Sample RAG source documents
 ```
 
 ## Architecture
@@ -94,13 +105,45 @@ S3 Vectors and Bedrock Knowledge Base with `S3_VECTORS` storage type are not ful
 
 ### Lambda functions (all Python 3.11, source in `lambdas/`)
 
-- **`lambda_hybrid_rag_handler.py`** — Calls `bedrock-agent-runtime.retrieve_and_generate` with `overrideSearchType: HYBRID`. Only works with OpenSearch Serverless-backed KBs, not S3 Vectors. Input: `{"query": "..."}`.
+- **`lambda_document_indexer_handler.py`** — Lists all `.txt` files in the documents bucket, tokenizes each filename into keywords, writes `document-index.txt` (natural-language sentences for vector search) and `<file>.metadata.json` (Bedrock metadata attributes) back to S3, then starts a Bedrock ingestion job. Run this after uploading new documents. Input: `{}`.
+
+- **`lambda_rag_citations_v2_handler.py`** *(recommended)* — Two-step: `retrieve()` fetches KB chunks (filename read from chunk metadata), then `converse()` with `DocumentBlock`s and `citationsConfig: {enabled: true}`. Uses a pre-built `{doc_name: chunk}` dict for exact citation-to-source resolution — no heuristic URI matching. Input: `{"query": "..."}`. Output: `html_response` with inline `<sup>[N]</sup>` tags, `references[]` showing filenames.
+
+- **`lambda_rag_citations_v1_handler.py`** — Single call to `retrieve_and_generate` (SEMANTIC, S3 Vectors compatible). Post-processes span offsets to insert `<sup>` markers end→start. Lower latency but no prompt control. Input: `{"query": "..."}`.
+
+- **`lambda_hybrid_rag_handler.py`** — Calls `retrieve_and_generate` with `overrideSearchType: HYBRID`. **Only works with OpenSearch Serverless-backed KBs, not S3 Vectors.** Input: `{"query": "..."}`.
 
 Terraform zips the lambda source files at plan/apply time using `archive_file` data sources; the `.zip` files are written to `lambdas/` and are gitignored.
 
-### Key hardcoded value
+### Document metadata
 
-`knowledge_base_id = "ZI2DHYWRGS"` is hardcoded in `terraform/main.tf` locals. It is passed as an env var to the hybrid RAG Lambda. Update this after `terraform apply` if the KB was recreated.
+The document indexer writes two artifacts per source file to the documents S3 bucket:
+
+1. **`<file>.metadata.json`** — Bedrock reads this alongside the source doc during ingestion and attaches the attributes to every vector chunk:
+   ```json
+   {
+     "metadataAttributes": {
+       "filename":        {"value": {"stringValue": "france-geography.txt"}, "type": "STRING"},
+       "filename_tokens": {"value": {"stringValue": "france geography"},     "type": "STRING"},
+       "topic_france":    {"value": {"stringValue": "france"},               "type": "STRING"},
+       "topic_geography": {"value": {"stringValue": "geography"},            "type": "STRING"}
+     }
+   }
+   ```
+
+2. **`document-index.txt`** — Plain-text index ingested into the KB so natural-language queries like *"find filenames with geography in the title"* return `france-geography.txt` via vector search:
+   ```
+   The file france-geography.txt covers topics including: france, geography.
+   ```
+
+The V2 citation Lambda reads `filename` from chunk metadata returned by `retrieve()`, eliminating the need for URI parsing or heuristic title-to-source matching.
+
+### Key hardcoded values
+
+Both are in `terraform/main.tf` locals — update after `terraform apply` if resources are recreated:
+
+- `knowledge_base_id = "ZI2DHYWRGS"`
+- `data_source_id = "IZP4FOAXOO"`
 
 ### Embedding model & chunking
 
